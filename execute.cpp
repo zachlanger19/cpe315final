@@ -234,23 +234,24 @@ void execute() {
       add_ops = decode(alu);
       switch(add_ops) {
         case ALU_LSLI:
-          // TODO
           // fully new
           rf.write(alu.instr.lsli.rd, rf[alu.instr.lsli.rd] << alu.instr.lsli.imm);
+          stats.instr += 1;
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
         case ALU_ADDR:
           // needs stats and flags
           rf.write(alu.instr.addr.rd, rf[alu.instr.addr.rn] + rf[alu.instr.addr.rm]);
-          // stats done?
+          // stats new
+          stats.instr += 1;
           stats.numRegReads += 2;
           stats.numRegWrites += 1;
-          // no flags?
           break;
         case ALU_SUBR:
           // fully new
           rf.write(alu.instr.subr.rd, rf[alu.instr.subr.rn] - rf[alu.instr.subr.rm]);
+          stats.instr += 1;
           stats.numRegReads += 2;
           stats.numRegWrites += 1;
           break;
@@ -258,30 +259,45 @@ void execute() {
           // needs stats and flags
           rf.write(alu.instr.add3i.rd, rf[alu.instr.add3i.rn] + alu.instr.add3i.imm);
           // stats and flags done?
+          stats.instr += 1;
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
         case ALU_SUB3I:
-          // TODO
+          // fully new
+          rf.write(alu.instr.sub3i.rd, rf[alu.instr.sub3i.rn] - alu.instr.sub3i.imm);
+          stats.instr += 1;
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
           break;
         case ALU_MOV:
           // needs stats and flags
           rf.write(alu.instr.mov.rdn, alu.instr.mov.imm);
           // stats done?
+          stats.instr += 1;
           stats.numRegWrites += 1;
           break;
         case ALU_CMP:
-          // TODO
+          // fully new
+          setNegativeAndZero(rf[alu.instr.cmp.rdn] - rf[alu.instr.cmp.imm]);
+          setCarryOverflow(rf[alu.instr.cmp.rdn], alu.instr.cmp.imm, OF_SUB);
+          stats.instr += 1;
+          stats.numRegReads += 1;
           break;
         case ALU_ADD8I:
           // needs stats and flags
           rf.write(alu.instr.add8i.rdn, rf[alu.instr.add8i.rdn] + alu.instr.add8i.imm);
-          // stats/flags TODO
+          // stats new
+          stats.instr += 1;
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
         case ALU_SUB8I:
-          // TODO
+          // fully new
+          rf.write(alu.instr.sub8i.rdn, rf[alu.instr.sub8i.rdn] - alu.instr.sub8i.imm);
+          stats.instr += 1;
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
           break;
         default:
           cout << "instruction not implemented" << endl;

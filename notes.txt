@@ -1,4 +1,4 @@
 TODO
 - finish ALU switch
-- find where to add instruction counting for stats
+- find where to add instruction and cycle counting for stats
 - figure out whether there is an effect on flags by instructions in ALU other than CMP
