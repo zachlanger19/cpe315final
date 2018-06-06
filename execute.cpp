@@ -335,6 +335,10 @@ void execute() {
       switch(dp_ops) {
         case DP_CMP:
           // need to implement
+          // really unsure if this part is correct
+          setNegativeAndZero(rf[dp.instr.DP_Instr.rdn] - rf[dp.instr.DP_Instr.rm]);
+          setCarryOverflow(rf[dp.instr.DP_Instr.rdn], rf[dp.instr.DP_Instr.rm], OF_SUB)
+          stats.numRegReads += 2;
           break;
       }
       break;

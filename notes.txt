@@ -1,4 +1,5 @@
 TODO
 - finish ALU switch
 - find where to add instruction and cycle counting for stats
-- figure out whether there is an effect on flags by instructions in ALU other than CMP
+- figure out what the dp (data processing) cmp instruction is supposed to do
+- figure out what the special instructions are supposed to do
