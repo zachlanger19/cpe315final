@@ -235,6 +235,10 @@ void execute() {
       switch(add_ops) {
         case ALU_LSLI:
           // TODO
+          // fully new
+          rf.write(alu.instr.lsli.rd, rf[alu.instr.lsli.rd] << alu.instr.lsli.imm);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
           break;
         case ALU_ADDR:
           // needs stats and flags
@@ -242,16 +246,13 @@ void execute() {
           // stats done?
           stats.numRegReads += 2;
           stats.numRegWrites += 1;
-          // flags done?
-          setNegativeAndZero(rf[alu.instr.addr.rd]);
-          setCarryOverflow(rf[alu.instr.addr.rn], rf[alu.instr.addr.rm], OF_ADD);
+          // no flags?
           break;
         case ALU_SUBR:
-          rf.write(alu.instr.addr.rd, rf[alu.instr.addr.rn] - rf[alu.instr.addr.rm]);
+          // fully new
+          rf.write(alu.instr.subr.rd, rf[alu.instr.subr.rn] - rf[alu.instr.subr.rm]);
           stats.numRegReads += 2;
           stats.numRegWrites += 1;
-          setNegativeAndZero(rf[alu.instr.addr.rd]);
-          setCarryOverflow(rf[alu.instr.addr.rn], rf[alu.instr.addr.rm], OF_SUB);
           break;
         case ALU_ADD3I:
           // needs stats and flags
@@ -259,8 +260,6 @@ void execute() {
           // stats and flags done?
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
-          setNegativeAndZero(rf[alu.instr.addr.rd]);
-          setCarryOverflow(rf[alu.instr.addr.rn], alu.instr.add3i.imm, OF_ADD);
           break;
         case ALU_SUB3I:
           // TODO
@@ -268,7 +267,7 @@ void execute() {
         case ALU_MOV:
           // needs stats and flags
           rf.write(alu.instr.mov.rdn, alu.instr.mov.imm);
-          // stats and no affect on flags
+          // stats done?
           stats.numRegWrites += 1;
           break;
         case ALU_CMP:
@@ -337,6 +336,8 @@ void execute() {
           rf.write((sp.instr.mov.d << 3 ) | sp.instr.mov.rd, rf[sp.instr.mov.rm]);
           break;
         case SP_ADD:
+          // ? need to implement?
+          break;
         case SP_CMP:
           // need to implement these
           break;
