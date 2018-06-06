@@ -226,6 +226,9 @@ void execute() {
 
   itype = decode(ALL_Types(instr));
 
+  // new instruction counting
+  stats.instr++;
+
   // CPE 315: The bulk of your work is in the following switch statement
   // All instructions will need to have stats and cache access info added
   // as appropriate for that instruction.
