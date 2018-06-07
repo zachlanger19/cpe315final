@@ -371,17 +371,21 @@ void execute() {
       sp_ops = decode(sp);
       switch(sp_ops) {
         case SP_MOV:
-          // needs stats and flags
+          // new stats and no flags
           rf.write((sp.instr.mov.d << 3 ) | sp.instr.mov.rd, rf[sp.instr.mov.rm]);
-          setNegativeAndZero(rf[sp.instr.mov.d << 3])
-          // setNegativeAndZero(rf[dp.instr.DP_Instr.rdn] - rf[dp.instr.DP_Instr.rm]);
-          // setCarryOverflow(rf[dp.instr.DP_Instr.rdn], rf[dp.instr.DP_Instr.rm], OF_SUB);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
           break;
         case SP_ADD:
-          // ? need to implement?
-          //break;
+          // all new
+          rf.write((sp.instr.add.d << 3) | sp.instr.add.rd, rf[(sp.instr.add.d << 3) | sp.instr.add.rd] + rf[sp.instr.add.rm]);
+          stats.numRegReads += 2;
+          stats.numRegWrites += 1;
         case SP_CMP:
-          // need to implement these
+          // all new
+          setNegativeAndZero(rf[(sp.instr.cmp.d << 3) | sp.instr.cmp.rd] - rf[sp.instr.cmp.rm]);
+          setCarryOverflow(rf[(sp.instr.cmp.d << 3) | sp.instr.cmp.rd], rf[sp.instr.cmp.rm], OF_SUB);
+          stats.numRegReads += 2;
           break;
       }
       break;
@@ -394,11 +398,16 @@ void execute() {
           // functionally complete, needs stats
           addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
           dmem.write(addr, rf[ld_st.instr.ld_st_imm.rt]);
+          // new stats
+          stats.numRegReads += 2;
+          stats.numMemWrites += 1;
           break;
         case LDRI:
           // functionally complete, needs stats
           addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
           rf.write(ld_st.instr.ld_st_imm.rt, dmem[addr]);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
           break;
         case STRR:
           // need to implement
@@ -452,6 +461,7 @@ void execute() {
       // Essentially the same as the conditional branches, but with no
       // condition check, and an 11-bit immediate field
       decode(uncond);
+      rf.write(PC_REG, PC + 2 * signExtend11to32ui(cond.instr.b.imm) + 2);
       break;
     case LDM:
       decode(ldm);

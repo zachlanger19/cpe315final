@@ -6,3 +6,12 @@ TODO
 - fix mov and movs
 - check ALU executions for flags
 - read through Piazza a lot
+
+
+
+
+- ldr?
+- str?
+- MISC_PUSH
+- MISC_POP
+- check on branches
