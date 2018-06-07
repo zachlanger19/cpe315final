@@ -434,52 +434,56 @@ void execute() {
       misc_ops = decode(misc);
       switch(misc_ops) {
         case MISC_PUSH:
-          // all new
-          // assume stack pointer points to last stored value, not first open space
-          // might causes stats error by counting as multiple reads/writes
-          // check lr first
-          if(misc.instr.push.m == 1) {
-              rf.write(SP_REG, SP - 4);
-              dmem.write(SP, LR);
-              stats.numRegReads += 1;
-              stats.numRegWrites += 1;
-              stats.numMemWrites += 1;
-          }
-          // loop through the rest of the registers
-          int bitcounter = 128;
-          for(int i = 0; i <= 7; i++) {
-              if(misc.instr.push.reg_list & bitcounter) {
+            {
+              // all new
+              // assume stack pointer points to last stored value, not first open space
+              // might causes stats error by counting as multiple reads/writes
+              // check lr first
+              if(misc.instr.push.m == 1) {
                   rf.write(SP_REG, SP - 4);
-                  dmem.write(SP, rf[i]);
+                  dmem.write(SP, LR);
                   stats.numRegReads += 1;
                   stats.numRegWrites += 1;
                   stats.numMemWrites += 1;
               }
-              bitcounter = bitcounter / 2;
+              // loop through the rest of the registers
+              int bitcountdown = 128;
+              for(int i = 0; i <= 7; i++) {
+                  if(misc.instr.push.reg_list & bitcountdown) {
+                      rf.write(SP_REG, SP - 4);
+                      dmem.write(SP, rf[i]);
+                      stats.numRegReads += 1;
+                      stats.numRegWrites += 1;
+                      stats.numMemWrites += 1;
+                  }
+                  bitcountdown = bitcountdown / 2;
+              }
+              // ? only one write for the stack pointer decrementation?
+              break;
           }
-          // ? only one write for the stack pointer decrementation?
-          break;
         case MISC_POP:
-          // need to implement
-          int bitcounter = 1;
-          for(int i = 0; i <= 7; i++) {
-              if(misc.instr.pop.reg_list & bitcounter) {
-                  rf.write(i, dmem[SP]);
+            {
+              // need to implement
+              int bitcountup = 1;
+              for(int i = 0; i <= 7; i++) {
+                  if(misc.instr.pop.reg_list & bitcountup) {
+                      rf.write(i, dmem[SP]);
+                      rf.write(SP_REG, SP + 4);
+                      stats.numRegReads += 2;
+                      stats.numRegWrites += 2;
+                      stats.numMemReads += 1;
+                  }
+                  bitcountup = bitcountup * 2;
+              }
+              // need to check if popping to PC counts as a branch
+              if(misc.instr.pop.m == 1) {
+                  rf.write(PC_REG, SP);
                   rf.write(SP_REG, SP + 4);
                   stats.numRegReads += 2;
                   stats.numRegWrites += 2;
-                  stats.numMemReads += 1;
               }
-              bitcounter = bitcounter * 2;
+              break;
           }
-          // need to check if popping to PC counts as a branch
-          if(mist.instr.pop.m == 1) {
-              rf.write(PC_REG, SP);
-              rf.write(SP_REG, SP + 4);
-              stats.numRegReads += 2;
-              stats.numRegWrites += 2;
-          }
-          break;
         case MISC_SUB:
           // functionally complete, needs stats
           rf.write(SP_REG, SP - (misc.instr.sub.imm*4));
