@@ -170,12 +170,12 @@ static int checkCondition(unsigned short cond) {
       }
       break;
     case GT:
-      if (flags.Z == 0 && flags.N == V) {
+      if (flags.Z == 0 && flags.N == flags.V) {
         return TRUE;
       }
       break;
     case LE:
-      if (flags.Z == 1 || flags.N != V) {
+      if (flags.Z == 1 || flags.N != flags.V) {
         return TRUE;
       }
       break;
@@ -227,7 +227,7 @@ void execute() {
   itype = decode(ALL_Types(instr));
 
   // new instruction counting
-  stats.instr++;
+  stats.instrs++;
 
   // CPE 315: The bulk of your work is in the following switch statement
   // All instructions will need to have stats and cache access info added
@@ -258,7 +258,7 @@ void execute() {
         case ALU_ADD3I:
           // needs stats and flags
           rf.write(alu.instr.add3i.rd, rf[alu.instr.add3i.rn] + alu.instr.add3i.imm);
-          // stats and flags done?
+          // stats new
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
@@ -271,7 +271,7 @@ void execute() {
         case ALU_MOV:
           // needs stats and flags
           rf.write(alu.instr.mov.rdn, alu.instr.mov.imm);
-          // stats done?
+          // stats new
           stats.numRegWrites += 1;
           break;
         case ALU_CMP:
@@ -337,7 +337,7 @@ void execute() {
           // need to implement
           // really unsure if this part is correct
           setNegativeAndZero(rf[dp.instr.DP_Instr.rdn] - rf[dp.instr.DP_Instr.rm]);
-          setCarryOverflow(rf[dp.instr.DP_Instr.rdn], rf[dp.instr.DP_Instr.rm], OF_SUB)
+          setCarryOverflow(rf[dp.instr.DP_Instr.rdn], rf[dp.instr.DP_Instr.rm], OF_SUB);
           stats.numRegReads += 2;
           break;
       }
