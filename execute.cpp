@@ -41,9 +41,13 @@ void setNegativeAndZero(int result) {
     flags.N = 1;
     flags.Z = 0;
   }
+  else if (result == 0) {
+      flags.N = 0;
+      flags.Z = 1;
+  }
   else {
     flags.N = 0;
-    flags.Z = 1;
+    flags.Z = 0;
   }
 }
 
@@ -192,6 +196,8 @@ void execute() {
   Data32 temp(0); // Use this for STRB instructions
   Thumb_Types itype;
   // the following counts as a read to PC
+  // ??????? Do we need to increment register reads here?
+  // stats.numRegReads++;
   unsigned int pctarget = PC + 2;
   unsigned int addr;
   int i, n, offset;
@@ -226,7 +232,7 @@ void execute() {
 
   itype = decode(ALL_Types(instr));
 
-  // new instruction counting
+  // new: instruction counting
   stats.instrs++;
 
   // CPE 315: The bulk of your work is in the following switch statement
@@ -238,11 +244,16 @@ void execute() {
       switch(add_ops) {
         case ALU_LSLI:
           // fully new
-          rf.write(alu.instr.lsli.rd, rf[alu.instr.lsli.rd] << alu.instr.lsli.imm);
+          setNegativeAndZero(rf[alu.instr.lsli.rm] << alu.instr.lsli.imm);
+          setCarryOverflow(rf[alu.instr.lsli.rm], alu.instr.lsli.imm, OF_SHIFT);
+          rf.write(alu.instr.lsli.rd, rf[alu.instr.lsli.rm] << alu.instr.lsli.imm);
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
         case ALU_ADDR:
+          // new flags
+          setNegativeAndZero(rf[alu.instr.addr.rn] + rf[alu.instr.addr.rm]);
+          setCarryOverflow(rf[alu.instr.addr.rn], rf[alu.instr.addr.rm], OF_ADD);
           // needs stats and flags
           rf.write(alu.instr.addr.rd, rf[alu.instr.addr.rn] + rf[alu.instr.addr.rm]);
           // stats new
@@ -251,11 +262,16 @@ void execute() {
           break;
         case ALU_SUBR:
           // fully new
+          setNegativeAndZero(rf[alu.instr.subr.rn] - rf[alu.instr.subr.rm]);
+          setCarryOverflow(rf[alu.instr.subr.rn], rf[alu.instr.subr.rm], OF_SUB);
           rf.write(alu.instr.subr.rd, rf[alu.instr.subr.rn] - rf[alu.instr.subr.rm]);
           stats.numRegReads += 2;
           stats.numRegWrites += 1;
           break;
         case ALU_ADD3I:
+          // flags new
+          setNegativeAndZero(rf[alu.instr.add3i.rn] + alu.instr.add3i.imm);
+          setCarryOverflow(rf[alu.instr.add3i.rn], alu.instr.add3i.imm, OF_ADD);
           // needs stats and flags
           rf.write(alu.instr.add3i.rd, rf[alu.instr.add3i.rn] + alu.instr.add3i.imm);
           // stats new
@@ -264,11 +280,15 @@ void execute() {
           break;
         case ALU_SUB3I:
           // fully new
+          setNegativeAndZero(rf[alu.instr.sub3i.rn] - alu.instr.sub3i.imm);
+          setCarryOverflow(rf[alu.instr.sub3i.rn], alu.instr.sub3i.imm, OF_SUB);
           rf.write(alu.instr.sub3i.rd, rf[alu.instr.sub3i.rn] - alu.instr.sub3i.imm);
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
         case ALU_MOV:
+          // new had to set carry before operation
+          setCarryOverflow(rf[alu.instr.mov.rdn], alu.instr.mov.imm, OF_SHIFT);
           // needs stats and flags
           rf.write(alu.instr.mov.rdn, alu.instr.mov.imm);
           // stats new
@@ -276,11 +296,14 @@ void execute() {
           break;
         case ALU_CMP:
           // fully new
-          setNegativeAndZero(rf[alu.instr.cmp.rdn] - rf[alu.instr.cmp.imm]);
+          setNegativeAndZero(rf[alu.instr.cmp.rdn] - alu.instr.cmp.imm);
           setCarryOverflow(rf[alu.instr.cmp.rdn], alu.instr.cmp.imm, OF_SUB);
           stats.numRegReads += 1;
           break;
         case ALU_ADD8I:
+          // new had to set carry before operation
+          setCarryOverflow(rf[alu.instr.add8i.rdn], alu.instr.add8i.imm, OF_ADD);
+          setNegativeAndZero(rf[alu.instr.add8i.rdn] + alu.instr.add8i.imm);
           // needs stats and flags
           rf.write(alu.instr.add8i.rdn, rf[alu.instr.add8i.rdn] + alu.instr.add8i.imm);
           // stats new
@@ -289,6 +312,8 @@ void execute() {
           break;
         case ALU_SUB8I:
           // fully new
+          setCarryOverflow(rf[alu.instr.sub8i.rdn], alu.instr.sub8i.imm, OF_SUB);
+          setNegativeAndZero(rf[alu.instr.sub8i.rdn] + alu.instr.sub8i.imm);
           rf.write(alu.instr.sub8i.rdn, rf[alu.instr.sub8i.rdn] - alu.instr.sub8i.imm);
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
@@ -335,7 +360,7 @@ void execute() {
       switch(dp_ops) {
         case DP_CMP:
           // need to implement
-          // really unsure if this part is correct
+          // unsure if this part is correct
           setNegativeAndZero(rf[dp.instr.DP_Instr.rdn] - rf[dp.instr.DP_Instr.rm]);
           setCarryOverflow(rf[dp.instr.DP_Instr.rdn], rf[dp.instr.DP_Instr.rm], OF_SUB);
           stats.numRegReads += 2;
@@ -348,10 +373,13 @@ void execute() {
         case SP_MOV:
           // needs stats and flags
           rf.write((sp.instr.mov.d << 3 ) | sp.instr.mov.rd, rf[sp.instr.mov.rm]);
+          setNegativeAndZero(rf[sp.instr.mov.d << 3])
+          // setNegativeAndZero(rf[dp.instr.DP_Instr.rdn] - rf[dp.instr.DP_Instr.rm]);
+          // setCarryOverflow(rf[dp.instr.DP_Instr.rdn], rf[dp.instr.DP_Instr.rm], OF_SUB);
           break;
         case SP_ADD:
           // ? need to implement?
-          break;
+          //break;
         case SP_CMP:
           // need to implement these
           break;

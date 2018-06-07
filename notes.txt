@@ -1,5 +1,8 @@
 TODO
-- finish ALU switch
-- find where to add instruction and cycle counting for stats
+- find where to add cycle counting for stats
 - figure out what the dp (data processing) cmp instruction is supposed to do
 - figure out what the special instructions are supposed to do
+- determine if the "the following counts as a read to PC" line needs to have an increment to stats.numRegReads
+- fix mov and movs
+- check ALU executions for flags
+- read through Piazza a lot
