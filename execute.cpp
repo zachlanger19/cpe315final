@@ -409,6 +409,7 @@ void execute() {
           // new stats
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
+          stats.numMemReads += 1;
           break;
         case STRR:
           // need to implement
