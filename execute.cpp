@@ -501,7 +501,21 @@ void execute() {
       // this should work for all your conditional branches.
       // needs stats
       if (checkCondition(cond.instr.b.cond)){
-        rf.write(PC_REG, PC + 2 * signExtend8to32ui(cond.instr.b.imm) + 2);
+          if (signExtend8to32ui(cond.instr.b.imm) + 2 < 0) {
+              stats.numForwardBranchesTaken++;
+          }
+          else {
+              stats.numBackwardBranchesTaken++;
+          }
+          rf.write(PC_REG, PC + 2 * signExtend8to32ui(cond.instr.b.imm) + 2);
+      }
+      else {
+          if (signExtend8to32ui(cond.instr.b.imm) + 2 < 0) {
+              stats.numForwardBranchesNotTaken++;
+          }
+          else {
+              stats.numBackwardBranchesNotTaken++;
+          }
       }
       break;
     case UNCOND:
