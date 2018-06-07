@@ -29,7 +29,7 @@ unsigned int signExtend11to32ui(short i) {
 }
 
 // This is the global object you'll use to store condition codes
-//  N(egative),Z(ero),V(signed overflow),C(arry)
+// N(egative),Z(ero),V(signed overflow),C(arry)
 // Set these bits appropriately in execute below.
 ASPR flags;
 
