@@ -24,7 +24,7 @@ unsigned int signExtend8to32ui(char i) {
 }
 
 unsigned int signExtend11to32ui(short i) {
-  uint32_t m = 1u << 10;
+  unsigned int m = 1u << 10;
   return (i ^ m) - m;
 }
 

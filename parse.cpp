@@ -12,7 +12,7 @@ void parseMem(ifstream & in, string type) {
   unsigned int data, addr;
   in >> s;
   transform(s.begin(), s.end(), s.begin(), (int(*)(int))tolower);
-  transform(type.begin(), type.end(), type.begin(), 
+  transform(type.begin(), type.end(), type.begin(),
             (int(*)(int))std::tolower);
   if (s == "ta") {
     s = "data";                 // hack
@@ -63,4 +63,3 @@ void parse(const char * file) {
   parseMem(in, "instruction");
   parseMem(in, "data");
 }
-
