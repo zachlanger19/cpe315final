@@ -196,9 +196,8 @@ void execute() {
   Data32 temp(0); // Use this for STRB instructions
   Thumb_Types itype;
   // the following counts as a read to PC
-  // ??????? Do we need to increment register reads here?
-  // stats.numRegReads++;
   unsigned int pctarget = PC + 2;
+  stats.numRegReads++;
   unsigned int addr;
   int i, n, offset;
   unsigned int list, mask;
@@ -229,12 +228,15 @@ void execute() {
 
   // This counts as a write to the PC register
   rf.write(PC_REG, pctarget);
+  stats.numRegWrites++;
 
   itype = decode(ALL_Types(instr));
 
   // new: instruction counting
   stats.instrs++;
 
+
+  // reg stat update starts now
   // CPE 315: The bulk of your work is in the following switch statement
   // All instructions will need to have stats and cache access info added
   // as appropriate for that instruction.
@@ -292,6 +294,8 @@ void execute() {
           // needs stats and flags
           rf.write(alu.instr.mov.rdn, alu.instr.mov.imm);
           // stats new
+          // TODO might not count as a read
+          stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
         case ALU_CMP:
@@ -443,8 +447,7 @@ void execute() {
               if(misc.instr.push.m == 1) {
                   rf.write(SP_REG, SP - 4);
                   dmem.write(SP, LR);
-                  stats.numRegReads += 1;
-                  stats.numRegWrites += 1;
+                  stats.numRegReads += 2;
                   stats.numMemWrites += 1;
               }
               // loop through the rest of the registers
@@ -453,13 +456,13 @@ void execute() {
                   if(misc.instr.push.reg_list & bitcountdown) {
                       rf.write(SP_REG, SP - 4);
                       dmem.write(SP, rf[i]);
-                      stats.numRegReads += 1;
-                      stats.numRegWrites += 1;
+                      stats.numRegReads += 2;
                       stats.numMemWrites += 1;
                   }
                   bitcountdown = bitcountdown / 2;
               }
-              // ? only one write for the stack pointer decrementation?
+              // for updating stack pointer
+              stats.numRegWrites += 1;
               break;
           }
         case MISC_POP:
@@ -470,9 +473,9 @@ void execute() {
                   if(misc.instr.pop.reg_list & bitcountup) {
                       rf.write(i, dmem[SP]);
                       rf.write(SP_REG, SP + 4);
-                      stats.numRegReads += 2;
-                      stats.numRegWrites += 2;
+                      stats.numRegReads += 1;
                       stats.numMemReads += 1;
+                      stats.numRegWrites += 1;
                   }
                   bitcountup = bitcountup * 2;
               }
@@ -480,19 +483,26 @@ void execute() {
               if(misc.instr.pop.m == 1) {
                   rf.write(PC_REG, dmem[SP]);
                   rf.write(SP_REG, SP + 4);
-                  stats.numRegReads += 2;
-                  stats.numRegWrites += 2;
+                  // could be three register reads
+                  stats.numRegReads += 1;
                   stats.numMemReads += 1;
+                  stats.numRegWrites += 1;
               }
+              // for updating stack pointer
+              stats.numRegWrites += 1;
               break;
           }
         case MISC_SUB:
           // functionally complete, needs stats
           rf.write(SP_REG, SP - (misc.instr.sub.imm*4));
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
           break;
         case MISC_ADD:
           // functionally complete, needs stats
           rf.write(SP_REG, SP + (misc.instr.add.imm*4));
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
           break;
       }
       break;
@@ -509,6 +519,8 @@ void execute() {
               stats.numBackwardBranchesTaken++;
           }
           rf.write(PC_REG, PC + 2 * signExtend8to32ui(cond.instr.b.imm) + 2);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
       }
       else {
           if (signExtend8to32ui(cond.instr.b.imm) + 2 < 0) {
@@ -524,6 +536,9 @@ void execute() {
       // condition check, and an 11-bit immediate field
       decode(uncond);
       rf.write(PC_REG, PC + 2 * signExtend11to32ui(cond.instr.b.imm) + 2);
+      // May not want any stat counting here
+      stats.numRegReads += 1;
+      stats.numRegWrites += 1;
       break;
     case LDM:
       decode(ldm);
@@ -558,6 +573,8 @@ void execute() {
       // needs stats
       decode(addsp);
       rf.write(addsp.instr.add.rd, SP + (addsp.instr.add.imm*4));
+      stats.numRegReads += 1;
+      stats.numRegWrites += 1;
       break;
     default:
       cout << "[ERROR] Unknown Instruction to be executed" << endl;
