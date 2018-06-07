@@ -477,10 +477,11 @@ void execute() {
               }
               // need to check if popping to PC counts as a branch
               if(misc.instr.pop.m == 1) {
-                  rf.write(PC_REG, SP);
+                  rf.write(PC_REG, dmem[SP]);
                   rf.write(SP_REG, SP + 4);
                   stats.numRegReads += 2;
                   stats.numRegWrites += 2;
+                  stats.numMemReads += 1;
               }
               break;
           }

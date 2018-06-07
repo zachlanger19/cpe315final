@@ -452,12 +452,14 @@ MISC_Ops decode(const MISC_Type data) {
 
 }
 
+extern unsigned int signExtend8to32ui (char);
+
 int decode(const COND_Type data) {
    // complete
    if (opts.instrs) {
       cout << "b";
       printCond(data.instr.b.cond);
-      cout << " 0x" << hex << rf[15] + 2 * (int) ((char) (data.instr.b.imm)) + 2 << endl;
+      cout << " 0x" << hex << rf[15] + 2 * signExtend8to32ui(data.instr.b.imm) + 2 << endl;
    }
 }
 
