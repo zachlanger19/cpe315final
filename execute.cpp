@@ -26,6 +26,15 @@ unsigned int signExtend8to32ui(char i) {
 unsigned int signExtend11to32ui(short i) {
   unsigned int m = 1u << 10;
   return (i ^ m) - m;
+  // i = ((i & int(2047)) << 21) >> 21;
+  // i = (i << 21) >> 21;
+  // int res = 0;
+  // if (i >= 2048) {
+  //     i -= 2048;
+  //     res += 2147483648;
+  // }
+  // res += i;
+  // return res;
 }
 
 // This is the global object you'll use to store condition codes
@@ -649,20 +658,24 @@ void execute() {
           // all new
           int bitcountupB = 1;
           addr = rf[ldm.instr.ldm.rn];
-          int updated = 0;
+          // int updated = 0;
+          BitCount = getBitCount(ldm.instr.ldm.reg_list);
           for (int i = 0; i <= 7; i++) {
               if (ldm.instr.ldm.reg_list & bitcountupB) {
                   rf.write(i, dmem[addr]);
                   addr += 4;
-                  updated++;
+                  // updated++;
                   caches.access(addr);
                   stats.numRegWrites += 1;
                   stats.numMemReads += 1;
               }
+              else if (i == ldm.instr.ldm.rn) {
+                  rf.write(ldm.instr.ldm.rn, rf[ldm.instr.ldm.rn] + BitCount * 4);
+              }
               bitcountupB = bitcountupB * 2;
           }
           // may need to update rn differently (see manual)
-          rf.write(ldm.instr.ldm.rn, rf[ldm.instr.ldm.rn] + updated * 4);
+          // rf.write(ldm.instr.ldm.rn, rf[ldm.instr.ldm.rn] + BitCount * 4);
 
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
@@ -675,6 +688,7 @@ void execute() {
           int bitcountupC = 1;
           addr = rf[stm.instr.stm.rn];
           int updated = 0;
+          BitCount = getBitCount(stm.instr.stm.reg_list);
           for (int i = 0; i <= 7; i++) {
               if (stm.instr.stm.reg_list & bitcountupC) {
                   if (i == stm.instr.stm.rn && updated != 0) {
@@ -690,7 +704,7 @@ void execute() {
               }
               bitcountupC = bitcountupC * 2;
           }
-          rf.write(stm.instr.stm.rn, rf[stm.instr.stm.rn] + 4 * updated);
+          rf.write(stm.instr.stm.rn, rf[stm.instr.stm.rn] + 4 * BitCount);
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
