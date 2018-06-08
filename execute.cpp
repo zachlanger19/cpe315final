@@ -432,7 +432,6 @@ void execute() {
           break;
         case STRBI:
           // need to implement
-          
           break;
         case LDRBI:
           // need to implement
