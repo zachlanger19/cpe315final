@@ -455,7 +455,7 @@ void execute() {
           break;
         case STRBI:
           // all new
-          addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm;
+          addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
           // may need to wipe temp with zeroes, but probably not
           temp = dmem[addr];
           temp.set_data_ubyte4(0, rf[ld_st.instr.ld_st_imm.rt]);
@@ -466,10 +466,11 @@ void execute() {
           break;
         case LDRBI:
           // all new
-          addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm;
+          addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
           // may need to wipe temp
-          temp = dmem[addr].data_ubyte4(0);
-          rf.write(ld_st.instr.ld_st_imm.rt, temp);
+          // temp = dmem[addr].data_ubyte4(0);
+          temp = dmem[addr];
+          rf.write(ld_st.instr.ld_st_imm.rt, temp.data_ubyte4(0));
           caches.access(addr);
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
@@ -477,7 +478,7 @@ void execute() {
           break;
         case STRBR:
           // all new
-          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
           temp = dmem[addr];
           temp.set_data_ubyte4(0, rf[ld_st.instr.ld_st_reg.rt]);
           dmem.write(addr, temp);
@@ -487,8 +488,9 @@ void execute() {
           break;
         case LDRBR:
           // need to implement
-          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
-          temp = dmem[addr].data_ubyte4(0);
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
+          // temp = dmem[addr].data_ubyte4(0);
+          temp = dmem[addr];
           rf.write(ld_st.instr.ld_st_reg.rt, temp.data_ubyte4(0));
           caches.access(addr);
           stats.numRegReads += 2;
