@@ -1,5 +1,6 @@
 #ifndef _DECODE_H_
 #define _DECODE_H_
+
 #include <unistd.h>
 #include <iostream>
 #include <vector>
@@ -283,11 +284,11 @@ struct COND_Type {
 };
 
 struct BL_Lower_Instr {
-  unsigned short imm11: 11;
-  unsigned short j2: 1;
-  unsigned short bit1: 1;
-  unsigned short j1: 1;
-  unsigned short op1: 2;
+   unsigned short imm11: 11;
+   unsigned short j2: 1;
+   unsigned short bit1: 1;
+   unsigned short j1: 1;
+   unsigned short op1: 2;
 };
 
 struct BL_Upper_Instr {
@@ -415,6 +416,7 @@ class ALL_Types{
        *
        */
 };
+
 static void printCond(char byte) {
    switch (byte) {
       case 0:
@@ -465,15 +467,16 @@ static void printCond(char byte) {
 }
 
 
-
 /* From mipsim.hpp */
 class Data8 {
-   private:
-      unsigned char d;
-   public:
-      Data8() {}
-      Data8(unsigned char _d) : d(_d) {}
-      operator unsigned char() const { return d; }
+private:
+   unsigned char d;
+public:
+   Data8() {}
+
+   Data8(unsigned char _d) : d(_d) {}
+
+   operator unsigned char() const { return d; }
 };
 
 class Data16 {
@@ -590,12 +593,16 @@ class Data32 {
       static void printD(const Data32 d) {
          cout << hex << d.data_uint() << endl;
       }
+
 };
-enum OFType { OF_ADD, OF_SUB, OF_SHIFT };
 
-enum MemType { MEM_MEM, MEM_RF, MEM_INVALID };
+enum MemType {
+   MEM_MEM, MEM_RF, MEM_INVALID
+};
 
-enum DataType { INSTRUCTIONS, DATA };
+enum DataType {
+   INSTRUCTIONS, DATA
+};
 
 template<class Stored, class Accessed>
 class Memory {
@@ -621,19 +628,24 @@ class Memory {
 };
 
 class Register {
-   private:
-      Data32 d;
-   public:
-      Register() : d(0) {}
-      Register(Data32 _d) : d(_d) {}
-      void write(unsigned int val) {
-         d = Data32(val);
-      }
-      operator Data32() const { return d; }
-      operator unsigned int() const { return d.data_uint(); }
-      Register & operator=(unsigned int val) {
-         write(val);
-      }
+private:
+   Data32 d;
+public:
+   Register() : d(0) {}
+
+   Register(Data32 _d) : d(_d) {}
+
+   void write(unsigned int val) {
+      d = Data32(val);
+   }
+
+   operator Data32() const { return d; }
+
+   operator unsigned int() const { return d.data_uint(); }
+
+   Register &operator=(unsigned int val) {
+      write(val);
+   }
 };
 
 class Cache {
@@ -655,61 +667,66 @@ class Cache {
                                     static_cast<float>(hits + misses)) << "%)" << endl;
       }
 };
+
 class Caches {
-   private:
-      unsigned int size;
-      vector<Cache> caches;
-   public:
-      Caches(unsigned int _size) : size(_size) {
-         int i;
-         for (i = 4; i <= size; i *= 2) {
-            caches.push_back(Cache(size, i));
-         }
+private:
+   unsigned int size;
+   vector <Cache> caches;
+public:
+   Caches(unsigned int _size) : size(_size) {
+      int i;
+      for (i = 4; i <= size; i *= 2) {
+         caches.push_back(Cache(size, i));
       }
-      void access(unsigned int address) {
-         if (size == 0) {
-            return;
-         }
-         vector<Cache>::iterator vci;
-         for (vci = caches.begin(); vci != caches.end(); ++vci) {
-            vci->access(address);
-         }
+   }
+
+   void access(unsigned int address) {
+      if (size == 0) {
+         return;
       }
-      void printStats() const {
-         if (size == 0) {
-            return;
-         }
-         for_each(caches.begin(), caches.end(), mem_fun_ref(&Cache::printStats));
+      vector<Cache>::iterator vci;
+      for (vci = caches.begin(); vci != caches.end(); ++vci) {
+         vci->access(address);
       }
+   }
+
+   void printStats() const {
+      if (size == 0) {
+         return;
+      }
+      for_each(caches.begin(), caches.end(), mem_fun_ref(&Cache::printStats));
+   }
 };
 
 class Stats {
-   public:
-      unsigned int instrs;
-      unsigned int cycles;
+public:
+   unsigned int instrs;
+   unsigned int cycles;
 
-      unsigned int numMemWrites;
-      unsigned int numMemReads;
-      unsigned int numBranches;
-      unsigned int numRegWrites;
-      unsigned int numRegReads;
+   unsigned int numMemWrites;
+   unsigned int numMemReads;
+   unsigned int numBranches;
+   unsigned int numRegWrites;
+   unsigned int numRegReads;
 
-      unsigned int numForwardBranchesTaken;
-      unsigned int numForwardBranchesNotTaken;
-      unsigned int numBackwardBranchesTaken;
-      unsigned int numBackwardBranchesNotTaken;
+   unsigned int numForwardBranchesTaken;
+   unsigned int numForwardBranchesNotTaken;
+   unsigned int numBackwardBranchesTaken;
+   unsigned int numBackwardBranchesNotTaken;
 
-      void print();
+   void print();
 };
+
 class Options {
-   public:
-      Options() : program(false), dump(false), instrs(false), writes(false),
-      stats(false) {}
-      bool program;
-      bool dump;
-      bool instrs;
-      bool writes;
-      bool stats;
+public:
+   Options() : program(false), dump(false), instrs(false), writes(false),
+               stats(false) {}
+
+   bool program;
+   bool dump;
+   bool instrs;
+   bool writes;
+   bool stats;
 };
 
 typedef enum Thumb_Types {
@@ -806,8 +823,8 @@ typedef enum MISC_Ops {
 } MISC_Ops;
 
 typedef enum BL_Ops {
-  BL_UPPER,
-  BL_LOWER
+   BL_UPPER,
+   BL_LOWER
 } BL_Ops;
 
 typedef struct APSR {
@@ -817,19 +834,22 @@ typedef struct APSR {
    unsigned char V;
 } ASPR;
 
-enum { EQ, NE, CS, CC, MI, PL, VS, VC, HI, LS, GE, LT, GT, LE, AL};
+enum {
+   EQ, NE, CS, CC, MI, PL, VS, VC, HI, LS, GE, LT, GT, LE, AL
+};
 
 extern ASPR flags;
 
-extern Memory<Data16,Data16> imem;
-extern Memory<Data8,Data32> dmem;
-extern Memory<Data32,Data32> rf;
+extern Memory<Data16, Data16> imem;
+extern Memory<Data8, Data32> dmem;
+extern Memory<Data32, Data32> rf;
 extern Register pc;
 extern Stats stats;
 extern Options opts;
 extern Caches caches;
 
-void parse(const char * file);
+void parse(const char *file);
+
 Thumb_Types decode(ALL_Types);
 
 /* Decodes for each type */

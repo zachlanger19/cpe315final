@@ -453,7 +453,6 @@ MISC_Ops decode(const MISC_Type data) {
 }
 
 extern unsigned int signExtend8to32ui (char);
-
 int decode(const COND_Type data) {
    // complete
    if (opts.instrs) {

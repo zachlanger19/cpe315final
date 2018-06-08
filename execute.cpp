@@ -16,20 +16,20 @@ Caches caches(0);
 // in addition to the ones given below, specifically for the unconditional
 // branch instruction, which has an 11-bit immediate field
 unsigned int signExtend16to32ui(short i) {
-  return static_cast<unsigned int>(static_cast<int>(i));
+   return static_cast<unsigned int>(static_cast<int>(i));
 }
 
 unsigned int signExtend8to32ui(char i) {
-  return static_cast<unsigned int>(static_cast<int>(i));
+   return static_cast<unsigned int>(static_cast<int>(i));
 }
 
 unsigned int signExtend11to32ui(short i) {
-  unsigned int m = 1u << 10;
-  return (i ^ m) - m;
+   unsigned int s = 1u << 10;
+   return (i ^ s) - s;
 }
 
 // This is the global object you'll use to store condition codes
-//  N(egative),Z(ero),V(signed overflow),C(arry)
+// N(egative),Z(ero),V(signed overflow),C(arry)
 // Set these bits appropriately in execute below.
 ASPR flags;
 
@@ -52,61 +52,55 @@ void setNegativeAndZero(int result) {
 }
 
 // This function is complete, you should not have to modify it
-void setCarryOverflow (int num1, int num2, OFType oftype) {
-  switch (oftype) {
-    case OF_ADD:
-      if (((unsigned long long int)num1 + (unsigned long long int)num2) ==
-          ((unsigned int)num1 + (unsigned int)num2)) {
-        flags.C = 0;
-      }
-      else {
-        flags.C = 1;
-      }
-      if (((long long int)num1 + (long long int)num2) ==
-          ((int)num1 + (int)num2)) {
-        flags.V = 0;
-      }
-      else {
-        flags.V = 1;
-      }
-      break;
-    case OF_SUB:
-      if (num1 >= num2) {
-        flags.C = 1;
-      }
-      else if (((unsigned long long int)num1 - (unsigned long long int)num2) ==
-          ((unsigned int)num1 - (unsigned int)num2)) {
-        flags.C = 0;
-      }
-      else {
-        flags.C = 1;
-      }
-      if (((num1==0) && (num2==0)) ||
-          (((long long int)num1 - (long long int)num2) ==
-           ((int)num1 - (int)num2))) {
-        flags.V = 0;
-      }
-      else {
-        flags.V = 1;
-      }
-      break;
-    case OF_SHIFT:
-      // C flag unaffected for shifts by zero
-      if (num2 != 0) {
-        if (((unsigned long long int)num1 << (unsigned long long int)num2) ==
-            ((unsigned int)num1 << (unsigned int)num2)) {
-          flags.C = 0;
-        }
-        else {
-          flags.C = 1;
-        }
-      }
-      // Shift doesn't set overflow
-      break;
-    default:
-      cerr << "Bad OverFlow Type encountered." << __LINE__ << __FILE__ << endl;
-      exit(1);
-  }
+void setCarryOverflow(int num1, int num2, OFType oftype) {
+   switch (oftype) {
+      case OF_ADD:
+         if (((unsigned long long int) num1 + (unsigned long long int) num2) ==
+             ((unsigned int) num1 + (unsigned int) num2)) {
+            flags.C = 0;
+         } else {
+            flags.C = 1;
+         }
+         if (((long long int) num1 + (long long int) num2) ==
+             ((int) num1 + (int) num2)) {
+            flags.V = 0;
+         } else {
+            flags.V = 1;
+         }
+         break;
+      case OF_SUB:
+         if (num1 >= num2) {
+            flags.C = 1;
+         } else if (((unsigned long long int) num1 - (unsigned long long int) num2) ==
+                    ((unsigned int) num1 - (unsigned int) num2)) {
+            flags.C = 0;
+         } else {
+            flags.C = 1;
+         }
+         if (((num1 == 0) && (num2 == 0)) ||
+             (((long long int) num1 - (long long int) num2) ==
+              ((int) num1 - (int) num2))) {
+            flags.V = 0;
+         } else {
+            flags.V = 1;
+         }
+         break;
+      case OF_SHIFT:
+         // C flag unaffected for shifts by zero
+         if (num2 != 0) {
+            if (((unsigned long long int) num1 << (unsigned long long int) num2) ==
+                ((unsigned int) num1 << (unsigned int) num2)) {
+               flags.C = 0;
+            } else {
+               flags.C = 1;
+            }
+         }
+         // Shift doesn't set overflow
+         break;
+      default:
+         cerr << "Bad OverFlow Type encountered." << __LINE__ << __FILE__ << endl;
+         exit(1);
+   }
 }
 
 // CPE 315: You're given the code for evaluating BEQ, and you'll need to
@@ -204,34 +198,33 @@ void execute() {
   int num1, num2, result, BitCount;
   unsigned int bit;
 
-  /* Convert instruction to correct type */
-  /* Types are described in Section A5 of the armv7 manual */
-  BL_Type blupper(instr);
-  ALU_Type alu(instr);
-  SP_Type sp(instr);
-  DP_Type dp(instr);
-  LD_ST_Type ld_st(instr);
-  MISC_Type misc(instr);
-  COND_Type cond(instr);
-  UNCOND_Type uncond(instr);
-  LDM_Type ldm(instr);
-  STM_Type stm(instr);
-  LDRL_Type ldrl(instr);
-  ADD_SP_Type addsp(instr);
+   /* Convert instruction to correct type */
+   /* Types are described in Section A5 of the armv7 manual */
+   BL_Type blupper(instr);
+   ALU_Type alu(instr);
+   SP_Type sp(instr);
+   DP_Type dp(instr);
+   LD_ST_Type ld_st(instr);
+   MISC_Type misc(instr);
+   COND_Type cond(instr);
+   UNCOND_Type uncond(instr);
+   LDM_Type ldm(instr);
+   STM_Type stm(instr);
+   LDRL_Type ldrl(instr);
+   ADD_SP_Type addsp(instr);
 
-  BL_Ops bl_ops;
-  ALU_Ops add_ops;
-  DP_Ops dp_ops;
-  SP_Ops sp_ops;
-  LD_ST_Ops ldst_ops;
-  MISC_Ops misc_ops;
-
+   BL_Ops bl_ops;
+   ALU_Ops add_ops;
+   DP_Ops dp_ops;
+   SP_Ops sp_ops;
+   LD_ST_Ops ldst_ops;
+   MISC_Ops misc_ops;
   // This counts as a write to the PC register
   rf.write(PC_REG, pctarget);
   stats.numRegWrites++;
 
-  itype = decode(ALL_Types(instr));
-
+   itype = decode(ALL_Types(instr));
+  
   // new: instruction counting
   stats.instrs++;
 
