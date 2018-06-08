@@ -1,16 +1,10 @@
 TODO
 - read through Piazza a lot
 - find any sign extensions
-- str funcs
-- ldr funcs
-- ldm
-- stm
 
 
 ldm instead of stm
 
 
 INSTRUCTIONS
-lsls r r #
-adds r r r
-subs r r r
+lsls r r #      ALU_LSLS

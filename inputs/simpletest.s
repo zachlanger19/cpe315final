@@ -11,6 +11,8 @@
 main:
     push {lr}
     sub	sp, sp, #16
+.L1
     add	r7, sp, #0
+.L2
     pop {pc}
     .size	main, .-main

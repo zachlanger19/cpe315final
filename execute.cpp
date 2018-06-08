@@ -289,12 +289,11 @@ void execute() {
           stats.numRegWrites += 1;
           break;
         case ALU_MOV:
-          // new had to set carry before operation
-          setCarryOverflow(rf[alu.instr.mov.rdn], alu.instr.mov.imm, OF_SHIFT);
+          // new flags
+          setNegativeAndZero(alu.instr.mov.imm);
           // needs stats and flags
           rf.write(alu.instr.mov.rdn, alu.instr.mov.imm);
           // stats new
-          // TODO might not count as a read
           stats.numRegWrites += 1;
           break;
         case ALU_CMP:
@@ -316,7 +315,7 @@ void execute() {
         case ALU_SUB8I:
           // fully new
           setCarryOverflow(rf[alu.instr.sub8i.rdn], alu.instr.sub8i.imm, OF_SUB);
-          setNegativeAndZero(rf[alu.instr.sub8i.rdn] + alu.instr.sub8i.imm);
+          setNegativeAndZero(rf[alu.instr.sub8i.rdn] - alu.instr.sub8i.imm);
           rf.write(alu.instr.sub8i.rdn, rf[alu.instr.sub8i.rdn] - alu.instr.sub8i.imm);
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
@@ -591,22 +590,7 @@ void execute() {
     case LDM:
       {
           decode(ldm);
-          // // both count up
-          // int bitcountupB = 1;
-          // for (int i = 0; i <= 7; i++) {
-          //     if(ldm.instr.ldm.reg_list & bitcountupB) {
-          //         addr = rf[ldm.instr.ldm.rn];
-          //         rf.write(i, dmem[addr]);
-          //         caches.access(addr);
-          //         rf.write(ldm.instr.ldm.rn, addr + 4);
-          //         stats.numMemReads += 1;
-          //         stats.numRegWrites += 1;
-          //     }
-          //     bitcountupB = bitcountupB * 2;
-          // }
-          //
-          // stats.numRegReads += 1;
-          // stats.numRegWrites += 1;
+          // all new
           int bitcountupB = 1;
           int addr = rf[ldm.instr.ldm.rn];
           int updated = 0;
@@ -615,6 +599,7 @@ void execute() {
                   rf.write(i, dmem[addr]);
                   addr += 4;
                   updated++;
+                  caches.access(addr);
                   stats.numRegWrites += 1;
                   stats.numMemReads += 1;
               }
@@ -630,23 +615,7 @@ void execute() {
     case STM:
       {
           decode(stm);
-          // // need to implement
-          // // loop through the rest of the registers
-          // int bitcountdown2 = 1;
-          // for(int i = 0; i <= 7; i++) {
-          //     if(stm.instr.stm.reg_list & bitcountdown2) {
-          //         rf.write(stm.instr.stm.rn, rf[stm.instr.stm.rn] + 4);
-          //         addr = rf[stm.instr.stm.rn];
-          //         dmem.write(addr, rf[i]);
-          //         caches.access(addr);
-          //         stats.numRegReads += 1;
-          //         stats.numMemWrites += 1;
-          //     }
-          //     bitcountdown2 = bitcountdown2 * 2;
-          // }
-          // // for updating base register with writeback
-          // stats.numRegWrites += 1;
-          // stats.numRegReads += 1;
+          // all new
           int bitcountupC = 1;
           int addr = rf[stm.instr.stm.rn];
           int updated = 0;
