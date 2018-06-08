@@ -292,9 +292,9 @@ struct BL_Lower_Instr {
 };
 
 struct BL_Upper_Instr {
-   unsigned short imm10: 10;
-   unsigned short s: 1;
-   unsigned short op2: 5;
+  unsigned short imm10: 10;
+  unsigned short s: 1;
+  unsigned short op2: 5;
 };
 
 struct BL_Type {
@@ -391,32 +391,30 @@ struct ADD_SP_Type {
    } instr;
 };
 
-class ALL_Types {
-public:
-   union {
-      unsigned short mem;
-      ALU_Type alu;
-      DP_Type dp;
-      SP_Type sp;
-      LD_ST_Type ld_st;
-      MISC_Type misc;
-      COND_Type cond;
-      UNCOND_Type uncond;
-      LDM_Type ldm;
-      STM_Type stm;
-      LDRL_Type ldrl;
-      ADD_SP_Type addsp;
-      BL_Type bl;
-   } type;
-
-   ALL_Types() {}
-
-   ALL_Types(const unsigned short &_type) { type.mem = _type; }
-   /*
-    * @param data An ALL_Types that uses data
-    * @return returns the Type of instruction it is.
-    *
-    */
+class ALL_Types{
+   public:
+      union {
+         unsigned short mem;
+         ALU_Type alu;
+         DP_Type dp;
+         SP_Type sp;
+         LD_ST_Type ld_st;
+         MISC_Type misc;
+         COND_Type cond;
+         UNCOND_Type uncond;
+         LDM_Type ldm;
+         STM_Type stm;
+         LDRL_Type ldrl;
+         ADD_SP_Type addsp;
+         BL_Type bl;
+      } type;
+      ALL_Types() {}
+      ALL_Types(const unsigned short & _type) {type.mem = _type;}
+      /*
+       * @param data An ALL_Types that uses data
+       * @return returns the Type of instruction it is.
+       *
+       */
 };
 
 static void printCond(char byte) {
@@ -482,158 +480,120 @@ public:
 };
 
 class Data16 {
-private:
-   union {
-      unsigned short _ushort;
-      short _short;
-      unsigned char _ubyte2[2];
-      ALU_Type alu;
-      DP_Type dp;
-      SP_Type sp;
-      LD_ST_Type ld_st;
-      MISC_Type misc;
-      COND_Type cond;
-      UNCOND_Type uncond;
-      LDM_Type ldm;
-      STM_Type stm;
-      LDRL_Type ldrl;
-      ADD_SP_Type addsp;
-      BL_Type bl;
-   } d;
-public:
-   Data16() {}
-
-   Data16(const unsigned short &_d) { d._ushort = _d; }
-
-   Data16(const unsigned char &d0,
-          const unsigned char &d1) {
-      set_data_ubyte2(0, d0);
-      set_data_ubyte2(1, d1);
-   }
-
-   // Data16 & operator=(const Data16 & _d) { set_data_uint(_d.data_uint()); }
-   operator unsigned short() const { return data_ushort(); }
-
-   bool operator==(const Data16 &dd) const { return (data_ushort() == dd.data_ushort()); }
-
-   bool operator!=(const Data16 &dd) const { return (data_ushort() != dd.data_ushort()); }
-
-   inline void set_data_short(short arg) {
-      d._short = arg;
-   }
-
-   inline short data_short(void) const {
-      return d._short;
-   }
-
-   inline void set_data_ushort(unsigned short arg) {
-      d._ushort = arg;
-   }
-
-   inline unsigned short data_ushort(void) const {
-      return d._ushort;
-   }
-
-   inline void set_data_ubyte2(short i, unsigned char arg) {
-      d._ubyte2[1 - i] = arg;
-      //cout << "set_data_ubyte4 " << d._ubyte4[3-1] << endl;
-   }
-
-   inline unsigned char data_ubyte2(short i) const {
-      //cout << "data_ubyte4 " << d._ubyte4[3-1] << endl;
-      return d._ubyte2[1 - i];
-   }
-
-   static void printD(const Data16 d) {
-      cout << hex << d.data_ushort() << endl;
-   }
-
-   operator ALU_Type() const { return d.alu; }
-
-   operator DP_Type() const { return d.dp; }
-
-   operator SP_Type() const { return d.sp; }
-
-   operator LD_ST_Type() const { return d.ld_st; }
-
-   operator MISC_Type() const { return d.misc; }
-
-   operator COND_Type() const { return d.cond; }
-
-   operator UNCOND_Type() const { return d.uncond; }
-
-   operator LDM_Type() const { return d.ldm; }
-
-   operator STM_Type() const { return d.stm; }
-
-   operator LDRL_Type() const { return d.ldrl; }
-
-   operator ADD_SP_Type() const { return d.addsp; }
-
-   operator BL_Type() const { return d.bl; }
+   private:
+      union {
+         unsigned short _ushort;
+         short _short;
+         unsigned char _ubyte2[2];
+         ALU_Type alu;
+         DP_Type dp;
+         SP_Type sp;
+         LD_ST_Type ld_st;
+         MISC_Type misc;
+         COND_Type cond;
+         UNCOND_Type uncond;
+         LDM_Type ldm;
+         STM_Type stm;
+         LDRL_Type ldrl;
+         ADD_SP_Type addsp;
+         BL_Type bl;
+      } d;
+   public:
+      Data16() {}
+      Data16(const unsigned short & _d) {d._ushort = _d; }
+      Data16(const unsigned char & d0,
+            const unsigned char & d1) {
+         set_data_ubyte2(0, d0);
+         set_data_ubyte2(1, d1);
+      }
+      // Data16 & operator=(const Data16 & _d) { set_data_uint(_d.data_uint()); }
+      operator unsigned short() const { return data_ushort(); }
+      bool operator==(const Data16 & dd) const { return (data_ushort() == dd.data_ushort()); }
+      bool operator!=(const Data16 & dd) const { return (data_ushort() != dd.data_ushort()); }
+      inline void set_data_short(short arg) {
+         d._short = arg;
+      }
+      inline short data_short(void) const {
+         return d._short;
+      }
+      inline void set_data_ushort(unsigned short arg) {
+         d._ushort = arg;
+      }
+      inline unsigned short data_ushort(void) const {
+         return d._ushort;
+      }
+      inline void set_data_ubyte2(short i, unsigned char arg) {
+         d._ubyte2[1-i] = arg;
+         //cout << "set_data_ubyte4 " << d._ubyte4[3-1] << endl;
+      }
+      inline unsigned char data_ubyte2(short i) const {
+         //cout << "data_ubyte4 " << d._ubyte4[3-1] << endl;
+         return d._ubyte2[1-i];
+      }
+      static void printD(const Data16 d) {
+         cout << hex << d.data_ushort() << endl;
+      }
+      operator ALU_Type() const { return d.alu; }
+      operator DP_Type() const { return d.dp; }
+      operator SP_Type() const { return d.sp; }
+      operator LD_ST_Type() const { return d.ld_st; }
+      operator MISC_Type() const { return d.misc; }
+      operator COND_Type() const { return d.cond; }
+      operator UNCOND_Type() const { return d.uncond; }
+      operator LDM_Type() const { return d.ldm; }
+      operator STM_Type() const { return d.stm; }
+      operator LDRL_Type() const { return d.ldrl; }
+      operator ADD_SP_Type() const { return d.addsp; }
+      operator BL_Type() const { return d.bl; }
 };
 
 class Data32 {
-private:
-   union {
-      unsigned int _uint;
-      int _int;
-      unsigned char _ubyte4[4];
-   } d;
-public:
-   // Data32() {}
-   Data32(const unsigned int &_d) { d._uint = _d; }
+   private:
+      union {
+         unsigned int _uint;
+         int _int;
+         unsigned char _ubyte4[4];
+      } d;
+   public:
+      // Data32() {}
+      Data32(const unsigned int & _d) {d._uint = _d; }
+      Data32(const unsigned char & d0,
+            const unsigned char & d1,
+            const unsigned char & d2,
+            const unsigned char & d3) {
+         set_data_ubyte4(0, d0);
+         set_data_ubyte4(1, d1);
+         set_data_ubyte4(2, d2);
+         set_data_ubyte4(3, d3);
+      }
+      // Data32 & operator=(const Data32 & _d) { set_data_uint(_d.data_uint()); }
+      operator unsigned int() const { return data_uint(); }
+      bool operator==(const Data32 & dd) const { return (data_uint() == dd.data_uint()); }
+      bool operator!=(const Data32 & dd) const { return (data_uint() != dd.data_uint()); }
+      inline void set_data_int(int arg) {
+         d._int = arg;
+      }
+      inline int data_int(void) const {
+         return d._int;
+      }
+      inline void set_data_uint(unsigned int arg) {
+         d._uint = arg;
+      }
+      inline unsigned int data_uint(void) const {
+         return d._uint;
+      }
+      inline void set_data_ubyte4(int i, unsigned char arg) {
+         d._ubyte4[3-i] = arg;
+         //cout << "set_data_ubyte4 " << d._ubyte4[3-1] << endl;
+      }
+      inline unsigned char data_ubyte4(int i) const {
+         //cout << "data_ubyte4 " << d._ubyte4[3-1] << endl;
+         return d._ubyte4[3-i];
+      }
+      static void printD(const Data32 d) {
+         cout << hex << d.data_uint() << endl;
+      }
 
-   Data32(const unsigned char &d0,
-          const unsigned char &d1,
-          const unsigned char &d2,
-          const unsigned char &d3) {
-      set_data_ubyte4(0, d0);
-      set_data_ubyte4(1, d1);
-      set_data_ubyte4(2, d2);
-      set_data_ubyte4(3, d3);
-   }
-
-   // Data32 & operator=(const Data32 & _d) { set_data_uint(_d.data_uint()); }
-   operator unsigned int() const { return data_uint(); }
-
-   bool operator==(const Data32 &dd) const { return (data_uint() == dd.data_uint()); }
-
-   bool operator!=(const Data32 &dd) const { return (data_uint() != dd.data_uint()); }
-
-   inline void set_data_int(int arg) {
-      d._int = arg;
-   }
-
-   inline int data_int(void) const {
-      return d._int;
-   }
-
-   inline void set_data_uint(unsigned int arg) {
-      d._uint = arg;
-   }
-
-   inline unsigned int data_uint(void) const {
-      return d._uint;
-   }
-
-   inline void set_data_ubyte4(int i, unsigned char arg) {
-      d._ubyte4[3 - i] = arg;
-      //cout << "set_data_ubyte4 " << d._ubyte4[3-1] << endl;
-   }
-
-   inline unsigned char data_ubyte4(int i) const {
-      //cout << "data_ubyte4 " << d._ubyte4[3-1] << endl;
-      return d._ubyte4[3 - i];
-   }
-
-   static void printD(const Data32 d) {
-      cout << hex << d.data_uint() << endl;
-   }
-};
-
-enum OFType {
-   OF_ADD, OF_SUB, OF_SHIFT
 };
 
 enum MemType {
@@ -646,35 +606,25 @@ enum DataType {
 
 template<class Stored, class Accessed>
 class Memory {
-private:
-   vector <Stored> m;
-   unsigned int base;
-   unsigned int lowest, highest;
-public:
-   Memory() : m(0), base(0), lowest(0xffffffff), highest(0) {}
-
-   Memory(unsigned int _base) : m(0), base(_base), lowest(0xffffffff),
-                                highest(0) {}
-
-   Memory(unsigned int size, Stored d) : m(size, d), base(0),
-                                         lowest(0xffffffff), highest(0) {}
-
-   unsigned int size() const { return m.size(); }
-
-   typename vector<Stored>::const_iterator begin() const { return m.begin(); }
-
-   typename vector<Stored>::const_iterator end() const { return m.end(); }
-
-   void write(const unsigned int addr, const Accessed data);
-
-   const Accessed operator[](const unsigned int addr) const;
-
-   // Accessed & operator[](const unsigned int addr);
-   void dump(DataType dt) const;
-
-   unsigned int getBase() const { return base; }
-
-   bool inRange(unsigned int r) { return (r >= base) && (r < base + size()); }
+   private:
+      vector<Stored> m;
+      unsigned int base;
+      unsigned int lowest, highest;
+   public:
+      Memory() : m(0), base(0), lowest(0xffffffff), highest(0) {}
+      Memory(unsigned int _base) : m(0), base(_base), lowest(0xffffffff),
+      highest(0) {}
+      Memory(unsigned int size, Stored d) : m(size, d), base(0),
+      lowest(0xffffffff), highest(0) {}
+      unsigned int size() const { return m.size(); }
+      typename vector<Stored>::const_iterator begin() const { return m.begin(); }
+      typename vector<Stored>::const_iterator end() const { return m.end(); }
+      void write(const unsigned int addr, const Accessed data);
+      const Accessed operator[](const unsigned int addr) const;
+      // Accessed & operator[](const unsigned int addr);
+      void dump(DataType dt) const;
+      unsigned int getBase() const { return base; }
+      bool inRange(unsigned int r) { return (r >= base) && (r < base + size()); }
 };
 
 class Register {
@@ -699,25 +649,23 @@ public:
 };
 
 class Cache {
-private:
-   unsigned int size;
-   unsigned int blocksize;
-   vector<unsigned int> entries;
-   unsigned int hits;
-   unsigned int misses;
-public:
-   Cache(unsigned int _size, unsigned int _blocksize) :
-      size(_size), blocksize(_blocksize), entries(_size / _blocksize, 0),
-      hits(0), misses(0) {}
-
-   bool access(unsigned int address);
-
-   void printStats() const {
-      cout << dec << size << " byte cache (blocksize " << dec << blocksize
-           << " bytes): " << hits << " hits, " << misses << " misses (hit rate: "
-           << (static_cast<float>(hits) * 100.0f /
-               static_cast<float>(hits + misses)) << "%)" << endl;
-   }
+   private:
+      unsigned int size;
+      unsigned int blocksize;
+      vector<unsigned int> entries;
+      unsigned int hits;
+      unsigned int misses;
+   public:
+      Cache(unsigned int _size, unsigned int _blocksize) :
+         size(_size), blocksize(_blocksize), entries(_size / _blocksize, 0),
+         hits(0), misses(0) {}
+      bool access(unsigned int address);
+      void printStats() const {
+         cout << dec << size << " byte cache (blocksize " << dec << blocksize
+            << " bytes): " << hits << " hits, " << misses << " misses (hit rate: "
+                              << (static_cast<float>(hits) * 100.0f /
+                                    static_cast<float>(hits + misses)) << "%)" << endl;
+      }
 };
 
 class Caches {
@@ -905,30 +853,17 @@ void parse(const char *file);
 Thumb_Types decode(ALL_Types);
 
 /* Decodes for each type */
-ALU_Ops decode(const ALU_Type);
-
-DP_Ops decode(const DP_Type);
-
-SP_Ops decode(const SP_Type);
-
-LD_ST_Ops decode(const LD_ST_Type);
-
-MISC_Ops decode(const MISC_Type);
-
-BL_Ops decode(const BL_Type);
-
-int decode(const COND_Type);
-
-int decode(const UNCOND_Type);
-
-int decode(const LDM_Type);
-
-int decode(const STM_Type);
-
-int decode(const LDRL_Type);
-
-int decode(const ADD_SP_Type);
-
+ALU_Ops decode (const ALU_Type);
+DP_Ops decode (const DP_Type);
+SP_Ops decode (const SP_Type);
+LD_ST_Ops decode (const LD_ST_Type);
+MISC_Ops decode (const MISC_Type);
+BL_Ops decode (const BL_Type);
+int decode (const COND_Type);
+int decode (const UNCOND_Type);
+int decode (const LDM_Type);
+int decode (const STM_Type);
+int decode (const LDRL_Type);
+int decode (const ADD_SP_Type);
 void execute();
-
 #endif

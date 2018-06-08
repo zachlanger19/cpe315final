@@ -24,7 +24,7 @@ unsigned int signExtend8to32ui(char i) {
 }
 
 unsigned int signExtend11to32ui(short i) {
-   uint32_t s = 1u << 10;
+   unsigned int s = 1u << 10;
    return (i ^ s) - s;
 }
 
@@ -37,13 +37,18 @@ ASPR flags;
 // flags for each instruction that does that. It only needs to take
 // one parameter as input, the result of whatever operation is executing
 void setNegativeAndZero(int result) {
-   if (result < 0) {
-      flags.N = 1;
-      flags.Z = 0;
-   } else {
+  if (result < 0) {
+    flags.N = 1;
+    flags.Z = 0;
+  }
+  else if (result == 0) {
       flags.N = 0;
       flags.Z = 1;
-   }
+  }
+  else {
+    flags.N = 0;
+    flags.Z = 0;
+  }
 }
 
 // This function is complete, you should not have to modify it
@@ -101,96 +106,97 @@ void setCarryOverflow(int num1, int num2, OFType oftype) {
 // CPE 315: You're given the code for evaluating BEQ, and you'll need to
 // complete the rest of these conditions. See Page 208 of the armv7 manual
 static int checkCondition(unsigned short cond) {
-   switch (cond) {
-      case EQ:
-         if (flags.Z == 1) {
-            return TRUE;
-         }
-         break;
-      case NE:
-         if (flags.Z == 0) {
-            return TRUE;
-         }
-         break;
-      case CS:
-         if (flags.C == 1) {
-            return TRUE;
-         }
-         break;
-      case CC:
-         if (flags.C == 0) {
-            return TRUE;
-         }
-         break;
-      case MI:
-         if (flags.N == 1) {
-            return TRUE;
-         }
-         break;
-      case PL:
-         if (flags.N == 0) {
-            return TRUE;
-         }
-         break;
-      case VS:
-         if (flags.V == 1) {
-            return TRUE;
-         }
-         break;
-      case VC:
-         if (flags.V == 0) {
-            return TRUE;
-         }
-         break;
-      case HI:
-         if (flags.C == 1 && flags.Z == 0) {
-            return TRUE;
-         }
-         break;
-      case LS:
-         if (flags.C == 0 || flags.Z == 1) {
-            return TRUE;
-         }
-         break;
-      case GE:
-         if (flags.N == flags.V) {
-            return TRUE;
-         }
-         break;
-      case LT:
-         if (flags.N != flags.V) {
-            return TRUE;
-         }
-         break;
-      case GT:
-         if (flags.Z == 0 && flags.N == V) {
-            return TRUE;
-         }
-         break;
-      case LE:
-         if (flags.Z == 1 || flags.N != V) {
-            return TRUE;
-         }
-         break;
-      case AL:
-         return TRUE;
-         break;
-   }
-   return FALSE;
+  switch(cond) {
+    case EQ:
+      if (flags.Z == 1) {
+        return TRUE;
+      }
+      break;
+    case NE:
+      if (flags.Z == 0) {
+        return TRUE;
+      }
+      break;
+    case CS:
+      if (flags.C == 1) {
+        return TRUE;
+      }
+      break;
+    case CC:
+      if (flags.C == 0) {
+        return TRUE;
+      }
+      break;
+    case MI:
+      if (flags.N == 1) {
+        return TRUE;
+      }
+      break;
+    case PL:
+      if (flags.N == 0) {
+        return TRUE;
+      }
+      break;
+    case VS:
+      if (flags.V == 1) {
+        return TRUE;
+      }
+      break;
+    case VC:
+      if (flags.V == 0) {
+        return TRUE;
+      }
+      break;
+    case HI:
+      if (flags.C == 1 && flags.Z == 0) {
+        return TRUE;
+      }
+      break;
+    case LS:
+      if (flags.C == 0 || flags.Z == 1) {
+        return TRUE;
+      }
+      break;
+    case GE:
+      if (flags.N == flags.V) {
+        return TRUE;
+      }
+      break;
+    case LT:
+      if (flags.N != flags.V) {
+        return TRUE;
+      }
+      break;
+    case GT:
+      if (flags.Z == 0 && flags.N == flags.V) {
+        return TRUE;
+      }
+      break;
+    case LE:
+      if (flags.Z == 1 || flags.N != flags.V) {
+        return TRUE;
+      }
+      break;
+    case AL:
+      return TRUE;
+      break;
+  }
+  return FALSE;
 }
 
 void execute() {
-   Data16 instr = imem[PC];
-   Data16 instr2;
-   Data32 temp(0); // Use this for STRB instructions
-   Thumb_Types itype;
-   // the following counts as a read to PC
-   unsigned int pctarget = PC + 2;
-   unsigned int addr;
-   int i, n, offset;
-   unsigned int list, mask;
-   int num1, num2, result, BitCount;
-   unsigned int bit;
+  Data16 instr = imem[PC];
+  Data16 instr2;
+  Data32 temp(0); // Use this for STRB instructions
+  Thumb_Types itype;
+  // the following counts as a read to PC
+  unsigned int pctarget = PC + 2;
+  stats.numRegReads++;
+  unsigned int addr;
+  int i, n, offset;
+  unsigned int list, mask;
+  int num1, num2, result, BitCount;
+  unsigned int bit;
 
    /* Convert instruction to correct type */
    /* Types are described in Section A5 of the armv7 manual */
@@ -213,230 +219,359 @@ void execute() {
    SP_Ops sp_ops;
    LD_ST_Ops ldst_ops;
    MISC_Ops misc_ops;
-
-   // This counts as a write to the PC register
-   rf.write(PC_REG, pctarget);
+  // This counts as a write to the PC register
+  rf.write(PC_REG, pctarget);
+  stats.numRegWrites++;
 
    itype = decode(ALL_Types(instr));
+  
+  // new: instruction counting
+  stats.instrs++;
 
-   // CPE 315: The bulk of your work is in the following switch statement
-   // All instructions will need to have stats and cache access info added
-   // as appropriate for that instruction.
-   switch (itype) {
-      case ALU:
-         add_ops = decode(alu);
-         switch (add_ops) {
-            case ALU_LSLI:
-               // TODO
-               break;
-            case ALU_ADDR:
-               // needs stats and flags
-               rf.write(alu.instr.addr.rd, rf[alu.instr.addr.rn] + rf[alu.instr.addr.rm]);
-               // stats done?
-               stats.numRegReads += 2;
-               stats.numRegWrites += 1;
-               // flags done?
-               setNegativeAndZero(rf[alu.instr.addr.rd]);
-               setCarryOverflow(rf[alu.instr.addr.rn], rf[alu.instr.addr.rm], OF_ADD);
-               break;
-            case ALU_SUBR:
-               rf.write(alu.instr.addr.rd, rf[alu.instr.addr.rn] - rf[alu.instr.addr.rm]);
-               stats.numRegReads += 2;
-               stats.numRegWrites += 1;
-               setNegativeAndZero(rf[alu.instr.addr.rd]);
-               setCarryOverflow(rf[alu.instr.addr.rn], rf[alu.instr.addr.rm], OF_SUB);
-               break;
-            case ALU_ADD3I:
-               // needs stats and flags
-               rf.write(alu.instr.add3i.rd, rf[alu.instr.add3i.rn] + alu.instr.add3i.imm);
-               // stats and flags done?
-               stats.numRegReads += 1;
-               stats.numRegWrites += 1;
-               setNegativeAndZero(rf[alu.instr.addr.rd]);
-               setCarryOverflow(rf[alu.instr.addr.rn], alu.instr.add3i.imm, OF_ADD);
-               break;
-            case ALU_SUB3I:
-               // TODO
-               break;
-            case ALU_MOV:
-               // needs stats and flags
-               rf.write(alu.instr.mov.rdn, alu.instr.mov.imm);
-               // stats and no affect on flags
-               stats.numRegWrites += 1;
-               break;
-            case ALU_CMP:
-               // TODO
-               break;
-            case ALU_ADD8I:
-               // needs stats and flags
-               rf.write(alu.instr.add8i.rdn, rf[alu.instr.add8i.rdn] + alu.instr.add8i.imm);
-               // stats/flags TODO
-               stats.numRegReads += 1;
-               stats.numRegWrites += 1;
-               break;
-            case ALU_SUB8I:
-               // TODO
-               break;
-            default:
-               cout << "instruction not implemented" << endl;
-               exit(1);
-               break;
-         }
-         break;
-      case BL:
-         // This instruction is complete, nothing needed here
-         bl_ops = decode(blupper);
-         if (bl_ops == BL_UPPER) {
-            // PC has already been incremented above
-            instr2 = imem[PC];
-            BL_Type bllower(instr2);
-            if (blupper.instr.bl_upper.s) {
-               addr = static_cast<unsigned int>(0xff << 24) |
-                      ((~(bllower.instr.bl_lower.j1 ^ blupper.instr.bl_upper.s)) << 23) |
-                      ((~(bllower.instr.bl_lower.j2 ^ blupper.instr.bl_upper.s)) << 22) |
-                      ((blupper.instr.bl_upper.imm10) << 12) |
-                      ((bllower.instr.bl_lower.imm11) << 1);
-            } else {
-               addr = ((blupper.instr.bl_upper.imm10) << 12) |
-                      ((bllower.instr.bl_lower.imm11) << 1);
-            }
-            // return address is 4-bytes away from the start of the BL insn
-            rf.write(LR_REG, PC + 2);
-            // Target address is also computed from that point
-            rf.write(PC_REG, PC + 2 + addr);
 
-            stats.numRegReads += 1;
-            stats.numRegWrites += 2;
-         } else {
-            cerr << "Bad BL format." << endl;
-            exit(1);
-         }
-         break;
-      case DP:
-         dp_ops = decode(dp);
-         switch (dp_ops) {
-            case DP_CMP:
-               // need to implement
-               break;
-         }
-         break;
-      case SPECIAL:
-         sp_ops = decode(sp);
-         switch (sp_ops) {
-            case SP_MOV:
-               // needs stats and flags
-               rf.write((sp.instr.mov.d << 3) | sp.instr.mov.rd, rf[sp.instr.mov.rm]);
-               break;
-            case SP_ADD:
-            case SP_CMP:
-               // need to implement these
-               break;
-         }
-         break;
-      case LD_ST:
-         // You'll want to use these load and store models
-         // to implement ldrb/strb, ldm/stm and push/pop
-         ldst_ops = decode(ld_st);
-         switch (ldst_ops) {
-            case STRI:
-               // functionally complete, needs stats
-               addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
-               dmem.write(addr, rf[ld_st.instr.ld_st_imm.rt]);
-               break;
-            case LDRI:
-               // functionally complete, needs stats
-               addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
-               rf.write(ld_st.instr.ld_st_imm.rt, dmem[addr]);
-               break;
-            case STRR:
-               // need to implement
-               break;
-            case LDRR:
-               // need to implement
-               break;
-            case STRBI:
-               // need to implement
-               break;
-            case LDRBI:
-               // need to implement
-               break;
-            case STRBR:
-               // need to implement
-               break;
-            case LDRBR:
-               // need to implement
-               break;
-         }
-         break;
-      case MISC:
-         misc_ops = decode(misc);
-         switch (misc_ops) {
-            case MISC_PUSH:
-               // need to implement
-               break;
-            case MISC_POP:
-               // need to implement
-               break;
-            case MISC_SUB:
-               // functionally complete, needs stats
-               rf.write(SP_REG, SP - (misc.instr.sub.imm * 4));
-               break;
-            case MISC_ADD:
-               // functionally complete, needs stats
-               rf.write(SP_REG, SP + (misc.instr.add.imm * 4));
-               break;
-         }
-         break;
-      case COND:
-         decode(cond);
-         // Once you've completed the checkCondition function,
-         // this should work for all your conditional branches.
-         // needs stats
-         if (checkCondition(cond.instr.b.cond)) {
-            rf.write(PC_REG, PC + 2 * signExtend8to32ui(cond.instr.b.imm) + 2);
-         }
-         break;
-      case UNCOND:
-         // Essentially the same as the conditional branches, but with no
-         // condition check, and an 11-bit immediate field
-         decode(uncond);
-         break;
-      case LDM:
-         decode(ldm);
-         // need to implement
-         break;
-      case STM:
-         decode(stm);
-         // need to implement
-         break;
-      case LDRL:
-         // This instruction is complete, nothing needed
-         decode(ldrl);
-         // Need to check for alignment by 4
-         if (PC & 2) {
-            addr = PC + 2 + (ldrl.instr.ldrl.imm) * 4;
-         } else {
-            addr = PC + (ldrl.instr.ldrl.imm) * 4;
-         }
-         // Requires two consecutive imem locations pieced together
-         temp = imem[addr] | (imem[addr + 2] << 16);  // temp is a Data32
-         rf.write(ldrl.instr.ldrl.rt, temp);
+  // reg stat update starts now
+  // CPE 315: The bulk of your work is in the following switch statement
+  // All instructions will need to have stats and cache access info added
+  // as appropriate for that instruction.
+  switch(itype) {
+    case ALU:
+      add_ops = decode(alu);
+      switch(add_ops) {
+        case ALU_LSLI:
+          // fully new
+          setNegativeAndZero(rf[alu.instr.lsli.rm] << alu.instr.lsli.imm);
+          setCarryOverflow(rf[alu.instr.lsli.rm], alu.instr.lsli.imm, OF_SHIFT);
+          rf.write(alu.instr.lsli.rd, rf[alu.instr.lsli.rm] << alu.instr.lsli.imm);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          break;
+        case ALU_ADDR:
+          // new flags
+          setNegativeAndZero(rf[alu.instr.addr.rn] + rf[alu.instr.addr.rm]);
+          setCarryOverflow(rf[alu.instr.addr.rn], rf[alu.instr.addr.rm], OF_ADD);
+          // needs stats and flags
+          rf.write(alu.instr.addr.rd, rf[alu.instr.addr.rn] + rf[alu.instr.addr.rm]);
+          // stats new
+          stats.numRegReads += 2;
+          stats.numRegWrites += 1;
+          break;
+        case ALU_SUBR:
+          // fully new
+          setNegativeAndZero(rf[alu.instr.subr.rn] - rf[alu.instr.subr.rm]);
+          setCarryOverflow(rf[alu.instr.subr.rn], rf[alu.instr.subr.rm], OF_SUB);
+          rf.write(alu.instr.subr.rd, rf[alu.instr.subr.rn] - rf[alu.instr.subr.rm]);
+          stats.numRegReads += 2;
+          stats.numRegWrites += 1;
+          break;
+        case ALU_ADD3I:
+          // flags new
+          setNegativeAndZero(rf[alu.instr.add3i.rn] + alu.instr.add3i.imm);
+          setCarryOverflow(rf[alu.instr.add3i.rn], alu.instr.add3i.imm, OF_ADD);
+          // needs stats and flags
+          rf.write(alu.instr.add3i.rd, rf[alu.instr.add3i.rn] + alu.instr.add3i.imm);
+          // stats new
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          break;
+        case ALU_SUB3I:
+          // fully new
+          setNegativeAndZero(rf[alu.instr.sub3i.rn] - alu.instr.sub3i.imm);
+          setCarryOverflow(rf[alu.instr.sub3i.rn], alu.instr.sub3i.imm, OF_SUB);
+          rf.write(alu.instr.sub3i.rd, rf[alu.instr.sub3i.rn] - alu.instr.sub3i.imm);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          break;
+        case ALU_MOV:
+          // new had to set carry before operation
+          setCarryOverflow(rf[alu.instr.mov.rdn], alu.instr.mov.imm, OF_SHIFT);
+          // needs stats and flags
+          rf.write(alu.instr.mov.rdn, alu.instr.mov.imm);
+          // stats new
+          // TODO might not count as a read
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          break;
+        case ALU_CMP:
+          // fully new
+          setNegativeAndZero(rf[alu.instr.cmp.rdn] - alu.instr.cmp.imm);
+          setCarryOverflow(rf[alu.instr.cmp.rdn], alu.instr.cmp.imm, OF_SUB);
+          stats.numRegReads += 1;
+          break;
+        case ALU_ADD8I:
+          // new had to set carry before operation
+          setCarryOverflow(rf[alu.instr.add8i.rdn], alu.instr.add8i.imm, OF_ADD);
+          setNegativeAndZero(rf[alu.instr.add8i.rdn] + alu.instr.add8i.imm);
+          // needs stats and flags
+          rf.write(alu.instr.add8i.rdn, rf[alu.instr.add8i.rdn] + alu.instr.add8i.imm);
+          // stats new
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          break;
+        case ALU_SUB8I:
+          // fully new
+          setCarryOverflow(rf[alu.instr.sub8i.rdn], alu.instr.sub8i.imm, OF_SUB);
+          setNegativeAndZero(rf[alu.instr.sub8i.rdn] + alu.instr.sub8i.imm);
+          rf.write(alu.instr.sub8i.rdn, rf[alu.instr.sub8i.rdn] - alu.instr.sub8i.imm);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          break;
+        default:
+          cout << "instruction not implemented" << endl;
+          exit(1);
+          break;
+      }
+      break;
+    case BL:
+      // This instruction is complete, nothing needed here
+      bl_ops = decode(blupper);
+      if (bl_ops == BL_UPPER) {
+        // PC has already been incremented above
+        instr2 = imem[PC];
+        BL_Type bllower(instr2);
+        if (blupper.instr.bl_upper.s) {
+          addr = static_cast<unsigned int>(0xff<<24) |
+            ((~(bllower.instr.bl_lower.j1 ^ blupper.instr.bl_upper.s))<<23) |
+            ((~(bllower.instr.bl_lower.j2 ^ blupper.instr.bl_upper.s))<<22) |
+            ((blupper.instr.bl_upper.imm10)<<12) |
+            ((bllower.instr.bl_lower.imm11)<<1);
+        }
+        else {
+          addr = ((blupper.instr.bl_upper.imm10)<<12) |
+            ((bllower.instr.bl_lower.imm11)<<1);
+        }
+        // return address is 4-bytes away from the start of the BL insn
+        rf.write(LR_REG, PC + 2);
+        // Target address is also computed from that point
+        rf.write(PC_REG, PC + 2 + addr);
 
-         // One write for updated reg
-         stats.numRegWrites++;
-         // One read of the PC
-         stats.numRegReads++;
-         // One mem read, even though it's imem, and there's two of them
-         stats.numMemReads++;
-         break;
-      case ADD_SP:
-         // needs stats
-         decode(addsp);
-         rf.write(addsp.instr.add.rd, SP + (addsp.instr.add.imm * 4));
-         break;
-      default:
-         cout << "[ERROR] Unknown Instruction to be executed" << endl;
-         exit(1);
-         break;
-   }
+        stats.numRegReads += 1;
+        stats.numRegWrites += 2;
+      }
+      else {
+        cerr << "Bad BL format." << endl;
+        exit(1);
+      }
+      break;
+    case DP:
+      dp_ops = decode(dp);
+      switch(dp_ops) {
+        case DP_CMP:
+          // need to implement
+          // unsure if this part is correct
+          setNegativeAndZero(rf[dp.instr.DP_Instr.rdn] - rf[dp.instr.DP_Instr.rm]);
+          setCarryOverflow(rf[dp.instr.DP_Instr.rdn], rf[dp.instr.DP_Instr.rm], OF_SUB);
+          stats.numRegReads += 2;
+          break;
+      }
+      break;
+    case SPECIAL:
+      sp_ops = decode(sp);
+      switch(sp_ops) {
+        case SP_MOV:
+          // new stats and no flags
+          rf.write((sp.instr.mov.d << 3 ) | sp.instr.mov.rd, rf[sp.instr.mov.rm]);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          break;
+        case SP_ADD:
+          // all new
+          rf.write((sp.instr.add.d << 3) | sp.instr.add.rd, rf[(sp.instr.add.d << 3) | sp.instr.add.rd] + rf[sp.instr.add.rm]);
+          stats.numRegReads += 2;
+          stats.numRegWrites += 1;
+        case SP_CMP:
+          // all new
+          setNegativeAndZero(rf[(sp.instr.cmp.d << 3) | sp.instr.cmp.rd] - rf[sp.instr.cmp.rm]);
+          setCarryOverflow(rf[(sp.instr.cmp.d << 3) | sp.instr.cmp.rd], rf[sp.instr.cmp.rm], OF_SUB);
+          stats.numRegReads += 2;
+          break;
+      }
+      break;
+    case LD_ST:
+      // You'll want to use these load and store models
+      // to implement ldrb/strb, ldm/stm and push/pop
+      ldst_ops = decode(ld_st);
+      switch(ldst_ops) {
+        case STRI:
+          // functionally complete, needs stats
+          addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
+          dmem.write(addr, rf[ld_st.instr.ld_st_imm.rt]);
+          // new stats
+          stats.numRegReads += 2;
+          stats.numMemWrites += 1;
+          break;
+        case LDRI:
+          // functionally complete, needs stats
+          addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
+          rf.write(ld_st.instr.ld_st_imm.rt, dmem[addr]);
+          // new stats
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          stats.numMemReads += 1;
+          break;
+        case STRR:
+          // need to implement
+          break;
+        case LDRR:
+          // need to implement
+          break;
+        case STRBI:
+          // need to implement
+          break;
+        case LDRBI:
+          // need to implement
+          break;
+        case STRBR:
+          // need to implement
+          break;
+        case LDRBR:
+          // need to implement
+          break;
+      }
+      break;
+    case MISC:
+      misc_ops = decode(misc);
+      switch(misc_ops) {
+        case MISC_PUSH:
+            {
+              // all new
+              // assume stack pointer points to last stored value, not first open space
+              // might causes stats error by counting as multiple reads/writes
+              // check lr first
+              if(misc.instr.push.m == 1) {
+                  rf.write(SP_REG, SP - 4);
+                  dmem.write(SP, LR);
+                  stats.numRegReads += 2;
+                  stats.numMemWrites += 1;
+              }
+              // loop through the rest of the registers
+              int bitcountdown = 128;
+              for(int i = 0; i <= 7; i++) {
+                  if(misc.instr.push.reg_list & bitcountdown) {
+                      rf.write(SP_REG, SP - 4);
+                      dmem.write(SP, rf[i]);
+                      stats.numRegReads += 2;
+                      stats.numMemWrites += 1;
+                  }
+                  bitcountdown = bitcountdown / 2;
+              }
+              // for updating stack pointer
+              stats.numRegWrites += 1;
+              break;
+          }
+        case MISC_POP:
+            {
+              // need to implement
+              int bitcountup = 1;
+              for(int i = 0; i <= 7; i++) {
+                  if(misc.instr.pop.reg_list & bitcountup) {
+                      rf.write(i, dmem[SP]);
+                      rf.write(SP_REG, SP + 4);
+                      stats.numRegReads += 1;
+                      stats.numMemReads += 1;
+                      stats.numRegWrites += 1;
+                  }
+                  bitcountup = bitcountup * 2;
+              }
+              // need to check if popping to PC counts as a branch
+              if(misc.instr.pop.m == 1) {
+                  rf.write(PC_REG, dmem[SP]);
+                  rf.write(SP_REG, SP + 4);
+                  // could be three register reads
+                  stats.numRegReads += 1;
+                  stats.numMemReads += 1;
+                  stats.numRegWrites += 1;
+              }
+              // for updating stack pointer
+              stats.numRegWrites += 1;
+              break;
+          }
+        case MISC_SUB:
+          // functionally complete, needs stats
+          rf.write(SP_REG, SP - (misc.instr.sub.imm*4));
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          break;
+        case MISC_ADD:
+          // functionally complete, needs stats
+          rf.write(SP_REG, SP + (misc.instr.add.imm*4));
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          break;
+      }
+      break;
+    case COND:
+      decode(cond);
+      // Once you've completed the checkCondition function,
+      // this should work for all your conditional branches.
+      // needs stats
+      if (checkCondition(cond.instr.b.cond)){
+          if (signExtend8to32ui(cond.instr.b.imm) + 2 < 0) {
+              stats.numForwardBranchesTaken++;
+          }
+          else {
+              stats.numBackwardBranchesTaken++;
+          }
+          rf.write(PC_REG, PC + 2 * signExtend8to32ui(cond.instr.b.imm) + 2);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+      }
+      else {
+          if (signExtend8to32ui(cond.instr.b.imm) + 2 < 0) {
+              stats.numForwardBranchesNotTaken++;
+          }
+          else {
+              stats.numBackwardBranchesNotTaken++;
+          }
+      }
+      break;
+    case UNCOND:
+      // Essentially the same as the conditional branches, but with no
+      // condition check, and an 11-bit immediate field
+      decode(uncond);
+      rf.write(PC_REG, PC + 2 * signExtend11to32ui(cond.instr.b.imm) + 2);
+      // May not want any stat counting here
+      stats.numRegReads += 1;
+      stats.numRegWrites += 1;
+      break;
+    case LDM:
+      decode(ldm);
+      // need to implement
+      break;
+    case STM:
+      decode(stm);
+      // need to implement
+      break;
+    case LDRL:
+      // This instruction is complete, nothing needed
+      decode(ldrl);
+      // Need to check for alignment by 4
+      if (PC & 2) {
+        addr = PC + 2 + (ldrl.instr.ldrl.imm)*4;
+      }
+      else {
+        addr = PC + (ldrl.instr.ldrl.imm)*4;
+      }
+      // Requires two consecutive imem locations pieced together
+      temp = imem[addr] | (imem[addr+2]<<16);  // temp is a Data32
+      rf.write(ldrl.instr.ldrl.rt, temp);
+
+      // One write for updated reg
+      stats.numRegWrites++;
+      // One read of the PC
+      stats.numRegReads++;
+      // One mem read, even though it's imem, and there's two of them
+      stats.numMemReads++;
+      break;
+    case ADD_SP:
+      // needs stats
+      decode(addsp);
+      rf.write(addsp.instr.add.rd, SP + (addsp.instr.add.imm*4));
+      stats.numRegReads += 1;
+      stats.numRegWrites += 1;
+      break;
+    default:
+      cout << "[ERROR] Unknown Instruction to be executed" << endl;
+      exit(1);
+      break;
+  }
 }
