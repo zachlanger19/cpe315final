@@ -402,6 +402,7 @@ void execute() {
           // functionally complete, needs stats
           addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
           dmem.write(addr, rf[ld_st.instr.ld_st_imm.rt]);
+          caches.access(addr);
           // new stats
           stats.numRegReads += 2;
           stats.numMemWrites += 1;
@@ -410,6 +411,7 @@ void execute() {
           // functionally complete, needs stats
           addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
           rf.write(ld_st.instr.ld_st_imm.rt, dmem[addr]);
+          caches.access(addr);
           // new stats
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
@@ -419,6 +421,7 @@ void execute() {
           // all new
           addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
           dmem.write(addr, rf[ld_st.instr.ld_st_reg.rt]);
+          caches.access(addr);
           stats.numRegReads += 3;
           stats.numMemWrites += 1;
           break;
@@ -426,21 +429,52 @@ void execute() {
           // need to implement
           addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
           rf.write(ld_st.instr.ld_st_reg.rt, dmem[addr]);
+          caches.access(addr);
           stats.numRegReads += 2;
           stats.numRegWrites += 1;
           stats.numMemReads += 1;
           break;
         case STRBI:
-          // need to implement
+          // all new
+          addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm;
+          // may need to wipe temp with zeroes, but probably not
+          temp = dmem[addr];
+          temp.set_data_ubyte4(0, rf[ld_st.instr.ld_st_imm.rt]);
+          dmem.write(addr, temp);
+          caches.access(addr);
+          stats.numRegReads += 2;
+          stats.numMemWrites += 1;
           break;
         case LDRBI:
-          // need to implement
+          // all new
+          addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm;
+          // may need to wipe temp
+          temp = dmem[addr].data_ubyte4(0);
+          rf.write(ld_st.instr.ld_st_imm.rt, temp);
+          caches.access(addr);
+          stats.numRegReads += 1;
+          stats.numRegWrites += 1;
+          stats.numMemReads += 1;
           break;
         case STRBR:
-          // need to implement
+          // all new
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
+          temp = dmem[addr];
+          temp.set_data_ubyte4(0, rf[ld_st.instr.ld_st_reg.rt]);
+          dmem.write(addr, temp);
+          caches.access(addr);
+          stats.numRegReads += 3;
+          stats.numMemWrites += 1;
           break;
         case LDRBR:
           // need to implement
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
+          temp = dmem[addr].data_ubyte4(0);
+          rf.write(ld_st.instr.ld_st_reg.rt, temp.data_ubyte4(0));
+          caches.access(addr);
+          stats.numRegReads += 2;
+          stats.numRegWrites += 1;
+          stats.numMemReads += 1;
           break;
       }
       break;
@@ -456,6 +490,7 @@ void execute() {
               if(misc.instr.push.m == 1) {
                   rf.write(SP_REG, SP - 4);
                   dmem.write(SP, LR);
+                  caches.access(SP);
                   stats.numRegReads += 2;
                   stats.numMemWrites += 1;
               }
@@ -465,6 +500,7 @@ void execute() {
                   if(misc.instr.push.reg_list & bitcountdown) {
                       rf.write(SP_REG, SP - 4);
                       dmem.write(SP, rf[i]);
+                      caches.access(SP);
                       stats.numRegReads += 2;
                       stats.numMemWrites += 1;
                   }
@@ -481,6 +517,7 @@ void execute() {
               for(int i = 0; i <= 7; i++) {
                   if(misc.instr.pop.reg_list & bitcountup) {
                       rf.write(i, dmem[SP]);
+                      caches.access(SP);
                       rf.write(SP_REG, SP + 4);
                       stats.numRegReads += 1;
                       stats.numMemReads += 1;
@@ -491,6 +528,7 @@ void execute() {
               // need to check if popping to PC counts as a branch
               if(misc.instr.pop.m == 1) {
                   rf.write(PC_REG, dmem[SP]);
+                  caches.access(SP);
                   rf.write(SP_REG, SP + 4);
                   // could be three register reads
                   stats.numRegReads += 1;
@@ -550,13 +588,47 @@ void execute() {
       stats.numRegWrites += 1;
       break;
     case LDM:
-      decode(ldm);
-      // need to implement
-      break;
+      {
+          decode(ldm);
+          // all new
+          int bitcountupB = 1;
+          for (int i = 0; i <= 7; i++) {
+              if(ldm.instr.ldm.reg_list & bitcountupB) {
+                  addr = rf[ldm.instr.ldm.rn];
+                  rf.write(i, dmem[addr]);
+                  caches.access(addr);
+                  rf.write(ldm.instr.ldm.rn, addr + 4);
+                  stats.numRegReads += 1;
+                  stats.numMemReads += 1;
+                  stats.numRegWrites += 1;
+              }
+              bitcountupB = bitcountupB * 2;
+          }
+          // for updating base register
+          stats.numRegWrites += 1;
+          break;
+      }
     case STM:
-      decode(stm);
-      // need to implement
-      break;
+      {
+          decode(stm);
+          // need to implement
+          // loop through the rest of the registers
+          int bitcountdown2 = 128;
+          for(int i = 0; i <= 7; i++) {
+              if(stm.instr.stm.reg_list & bitcountdown2) {
+                  rf.write(stm.instr.stm.rn, rf[stm.instr.stm.rn] - 4);
+                  addr = rf[stm.instr.stm.rn];
+                  dmem.write(addr, rf[i]);
+                  caches.access(addr);
+                  stats.numRegReads += 2;
+                  stats.numMemWrites += 1;
+              }
+              bitcountdown2 = bitcountdown2 / 2;
+          }
+          // for updating base register
+          stats.numRegWrites += 1;
+          break;
+      }
     case LDRL:
       // This instruction is complete, nothing needed
       decode(ldrl);
