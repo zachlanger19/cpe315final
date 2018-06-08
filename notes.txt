@@ -8,3 +8,9 @@ TODO
 
 
 ldm instead of stm
+
+
+INSTRUCTIONS
+lsls r r #
+adds r r r
+subs r r r
