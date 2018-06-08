@@ -5,3 +5,6 @@ TODO
 - ldr funcs
 - ldm
 - stm
+
+
+ldm instead of stm

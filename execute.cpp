@@ -652,12 +652,13 @@ void execute() {
           int updated = 0;
           for (int i = 0; i <= 7; i++) {
               if (stm.instr.stm.reg_list & bitcountupC) {
-                  if (updated == 0) {
-                      dmem.write(addr, );
+                  if (i == stm.instr.stm.rn && updated != 0) {
+                      dmem.write(addr, 0);
                   }
                   else {
                       dmem.write(addr, rf[i]);
                   }
+                  updated++;
                   addr += 4;
                   stats.numRegReads += 1;
                   stats.numMemWrites += 1;

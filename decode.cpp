@@ -537,7 +537,7 @@ int decode(const STM_Type data) {
    // 315: add code to print ldm
    if (opts.instrs) {
       bool multiple = FALSE;
-      cout << "ldm r" << data.instr.stm.rn << "!, {";
+      cout << "stm r" << data.instr.stm.rn << "!, {";
       if (data.instr.stm.reg_list & 1) {
          cout << "r0";
          multiple = TRUE;
