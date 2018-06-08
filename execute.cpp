@@ -416,10 +416,19 @@ void execute() {
           stats.numMemReads += 1;
           break;
         case STRR:
-          // need to implement
+          // all new
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
+          dmem.write(addr, rf[ld_st.instr.ld_st_reg.rt]);
+          stats.numRegReads += 3;
+          stats.numMemWrites += 1;
           break;
         case LDRR:
           // need to implement
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
+          rf.write(ld_st.instr.ld_st_reg.rt, dmem[addr]);
+          stats.numRegReads += 2;
+          stats.numRegWrites += 1;
+          stats.numMemReads += 1;
           break;
         case STRBI:
           // need to implement
