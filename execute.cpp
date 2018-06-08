@@ -295,7 +295,6 @@ void execute() {
           rf.write(alu.instr.mov.rdn, alu.instr.mov.imm);
           // stats new
           // TODO might not count as a read
-          stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
         case ALU_CMP:
@@ -491,7 +490,7 @@ void execute() {
                   rf.write(SP_REG, SP - 4);
                   dmem.write(SP, LR);
                   caches.access(SP);
-                  stats.numRegReads += 2;
+                  stats.numRegReads += 1;
                   stats.numMemWrites += 1;
               }
               // loop through the rest of the registers
@@ -501,13 +500,14 @@ void execute() {
                       rf.write(SP_REG, SP - 4);
                       dmem.write(SP, rf[i]);
                       caches.access(SP);
-                      stats.numRegReads += 2;
+                      stats.numRegReads += 1;
                       stats.numMemWrites += 1;
                   }
                   bitcountdown = bitcountdown / 2;
               }
               // for updating stack pointer
               stats.numRegWrites += 1;
+              stats.numRegReads += 1;
               break;
           }
         case MISC_POP:
@@ -519,7 +519,7 @@ void execute() {
                       rf.write(i, dmem[SP]);
                       caches.access(SP);
                       rf.write(SP_REG, SP + 4);
-                      stats.numRegReads += 1;
+                      // stats.numRegReads += 1;
                       stats.numMemReads += 1;
                       stats.numRegWrites += 1;
                   }
@@ -531,12 +531,13 @@ void execute() {
                   caches.access(SP);
                   rf.write(SP_REG, SP + 4);
                   // could be three register reads
-                  stats.numRegReads += 1;
+                  // stats.numRegReads += 1;
                   stats.numMemReads += 1;
                   stats.numRegWrites += 1;
               }
               // for updating stack pointer
               stats.numRegWrites += 1;
+              stats.numRegReads += 1;
               break;
           }
         case MISC_SUB:
@@ -590,42 +591,81 @@ void execute() {
     case LDM:
       {
           decode(ldm);
-          // all new
+          // // both count up
+          // int bitcountupB = 1;
+          // for (int i = 0; i <= 7; i++) {
+          //     if(ldm.instr.ldm.reg_list & bitcountupB) {
+          //         addr = rf[ldm.instr.ldm.rn];
+          //         rf.write(i, dmem[addr]);
+          //         caches.access(addr);
+          //         rf.write(ldm.instr.ldm.rn, addr + 4);
+          //         stats.numMemReads += 1;
+          //         stats.numRegWrites += 1;
+          //     }
+          //     bitcountupB = bitcountupB * 2;
+          // }
+          //
+          // stats.numRegReads += 1;
+          // stats.numRegWrites += 1;
           int bitcountupB = 1;
+          int addr = rf[ldm.instr.ldm.rn];
+          int updated = 0;
           for (int i = 0; i <= 7; i++) {
-              if(ldm.instr.ldm.reg_list & bitcountupB) {
-                  addr = rf[ldm.instr.ldm.rn];
+              if (ldm.instr.ldm.reg_list & bitcountupB) {
                   rf.write(i, dmem[addr]);
-                  caches.access(addr);
-                  rf.write(ldm.instr.ldm.rn, addr + 4);
-                  stats.numRegReads += 1;
-                  stats.numMemReads += 1;
+                  addr += 4;
+                  updated++;
                   stats.numRegWrites += 1;
+                  stats.numMemReads += 1;
               }
               bitcountupB = bitcountupB * 2;
           }
-          // for updating base register
+          // may need to update rn differently (see manual)
+          rf.write(ldm.instr.ldm.rn, rf[ldm.instr.ldm.rn] + updated * 4);
+
+          stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
       }
     case STM:
       {
           decode(stm);
-          // need to implement
-          // loop through the rest of the registers
-          int bitcountdown2 = 128;
-          for(int i = 0; i <= 7; i++) {
-              if(stm.instr.stm.reg_list & bitcountdown2) {
-                  rf.write(stm.instr.stm.rn, rf[stm.instr.stm.rn] - 4);
-                  addr = rf[stm.instr.stm.rn];
-                  dmem.write(addr, rf[i]);
-                  caches.access(addr);
-                  stats.numRegReads += 2;
+          // // need to implement
+          // // loop through the rest of the registers
+          // int bitcountdown2 = 1;
+          // for(int i = 0; i <= 7; i++) {
+          //     if(stm.instr.stm.reg_list & bitcountdown2) {
+          //         rf.write(stm.instr.stm.rn, rf[stm.instr.stm.rn] + 4);
+          //         addr = rf[stm.instr.stm.rn];
+          //         dmem.write(addr, rf[i]);
+          //         caches.access(addr);
+          //         stats.numRegReads += 1;
+          //         stats.numMemWrites += 1;
+          //     }
+          //     bitcountdown2 = bitcountdown2 * 2;
+          // }
+          // // for updating base register with writeback
+          // stats.numRegWrites += 1;
+          // stats.numRegReads += 1;
+          int bitcountupC = 1;
+          int addr = rf[stm.instr.stm.rn];
+          int updated = 0;
+          for (int i = 0; i <= 7; i++) {
+              if (stm.instr.stm.reg_list & bitcountupC) {
+                  if (updated == 0) {
+                      dmem.write(addr, );
+                  }
+                  else {
+                      dmem.write(addr, rf[i]);
+                  }
+                  addr += 4;
+                  stats.numRegReads += 1;
                   stats.numMemWrites += 1;
               }
-              bitcountdown2 = bitcountdown2 / 2;
+              bitcountupC = bitcountupC * 2;
           }
-          // for updating base register
+          rf.write(stm.instr.stm.rn, rf[stm.instr.stm.rn] + 4 * updated);
+          stats.numRegReads += 1;
           stats.numRegWrites += 1;
           break;
       }
