@@ -190,6 +190,18 @@ static int checkCondition(unsigned short cond) {
   return FALSE;
 }
 
+unsigned int getBitCount(unsigned short reg_list) {
+    int bc = 0;
+    int bitcountdown = 1;
+    for (int i = 0; i <= 7; i++) {
+        if (reg_list & bitcountdown) {
+            bc++;
+        }
+        bitcountdown = bitcountdown << 1;
+    }
+    return bc;
+}
+
 void execute() {
   Data16 instr = imem[PC];
   Data16 instr2;
@@ -485,6 +497,25 @@ void execute() {
               // assume stack pointer points to last stored value, not first open space
               // might causes stats error by counting as multiple reads/writes
               // check lr first
+              // if(misc.instr.push.m == 1) {
+              //     rf.write(SP_REG, SP - 4);
+              //     dmem.write(SP, LR);
+              //     caches.access(SP);
+              //     stats.numRegReads += 1;
+              //     stats.numMemWrites += 1;
+              // }
+              // // loop through the rest of the registers
+              // int bitcountdown = 128;
+              // for(int i = 0; i <= 7; i++) {
+              //     if(misc.instr.push.reg_list & bitcountdown) {
+              //         rf.write(SP_REG, SP - 4);
+              //         dmem.write(SP, rf[i]);
+              //         caches.access(SP);
+              //         stats.numRegReads += 1;
+              //         stats.numMemWrites += 1;
+              //     }
+              //     bitcountdown = bitcountdown / 2;
+              // }
               if(misc.instr.push.m == 1) {
                   rf.write(SP_REG, SP - 4);
                   dmem.write(SP, LR);
@@ -492,18 +523,21 @@ void execute() {
                   stats.numRegReads += 1;
                   stats.numMemWrites += 1;
               }
-              // loop through the rest of the registers
-              int bitcountdown = 128;
-              for(int i = 0; i <= 7; i++) {
-                  if(misc.instr.push.reg_list & bitcountdown) {
-                      rf.write(SP_REG, SP - 4);
-                      dmem.write(SP, rf[i]);
-                      caches.access(SP);
+              BitCount = getBitCount(misc.instr.push.reg_list);
+              addr = SP - 4 * BitCount;
+              int bitcountupA = 1;
+              for (int i = 0; i <= 7; i++) {
+                  if (misc.instr.push.reg_list & bitcountupA) {
+                      dmem.write(addr, rf[i]);
+                      caches.access(addr);
+                      addr += 4;
                       stats.numRegReads += 1;
                       stats.numMemWrites += 1;
                   }
-                  bitcountdown = bitcountdown / 2;
+                  bitcountupA = bitcountupA << 1;
               }
+              rf.write(SP_REG, SP - 4 * BitCount);
+
               // for updating stack pointer
               stats.numRegWrites += 1;
               stats.numRegReads += 1;
@@ -511,29 +545,51 @@ void execute() {
           }
         case MISC_POP:
             {
-              // need to implement
-              int bitcountup = 1;
-              for(int i = 0; i <= 7; i++) {
-                  if(misc.instr.pop.reg_list & bitcountup) {
-                      rf.write(i, dmem[SP]);
-                      caches.access(SP);
-                      rf.write(SP_REG, SP + 4);
-                      // stats.numRegReads += 1;
-                      stats.numMemReads += 1;
-                      stats.numRegWrites += 1;
-                  }
-                  bitcountup = bitcountup * 2;
-              }
-              // need to check if popping to PC counts as a branch
-              if(misc.instr.pop.m == 1) {
-                  rf.write(PC_REG, dmem[SP]);
-                  caches.access(SP);
-                  rf.write(SP_REG, SP + 4);
-                  // could be three register reads
-                  // stats.numRegReads += 1;
+              BitCount = getBitCount(misc.instr.pop.reg_list);
+              if (misc.instr.pop.m == 1) {
+                  addr = SP + 4 * BitCount;
+                  rf.write(PC_REG, dmem[addr]);
+                  caches.access(addr);
                   stats.numMemReads += 1;
                   stats.numRegWrites += 1;
+                  BitCount += 1;
               }
+              int bitcountupD = 1;
+              addr = SP;
+              for (int i = 0; i <= 7; i++) {
+                  if(misc.instr.pop.reg_list & bitcountupD) {
+                      rf.write(i, dmem[addr]);
+                      caches.access(addr);
+                      addr += 4;
+                      stats.numRegWrites += 1;
+                      stats.numMemReads += 1;
+                  }
+                  bitcountupD = bitcountupD << 1;
+              }
+              rf.write(SP_REG, SP + BitCount * 4);
+              // need to implement
+              // int bitcountup = 1;
+              // for(int i = 0; i <= 7; i++) {
+              //     if(misc.instr.pop.reg_list & bitcountup) {
+              //         rf.write(i, dmem[SP]);
+              //         caches.access(SP);
+              //         rf.write(SP_REG, SP + 4);
+              //         // stats.numRegReads += 1;
+              //         stats.numMemReads += 1;
+              //         stats.numRegWrites += 1;
+              //     }
+              //     bitcountup = bitcountup * 2;
+              // }
+              // // need to check if popping to PC counts as a branch
+              // if(misc.instr.pop.m == 1) {
+              //     rf.write(PC_REG, dmem[SP]);
+              //     caches.access(SP);
+              //     rf.write(SP_REG, SP + 4);
+              //     // could be three register reads
+              //     // stats.numRegReads += 1;
+              //     stats.numMemReads += 1;
+              //     stats.numRegWrites += 1;
+              // }
               // for updating stack pointer
               stats.numRegWrites += 1;
               stats.numRegReads += 1;
@@ -592,7 +648,7 @@ void execute() {
           decode(ldm);
           // all new
           int bitcountupB = 1;
-          int addr = rf[ldm.instr.ldm.rn];
+          addr = rf[ldm.instr.ldm.rn];
           int updated = 0;
           for (int i = 0; i <= 7; i++) {
               if (ldm.instr.ldm.reg_list & bitcountupB) {
@@ -617,7 +673,7 @@ void execute() {
           decode(stm);
           // all new
           int bitcountupC = 1;
-          int addr = rf[stm.instr.stm.rn];
+          addr = rf[stm.instr.stm.rn];
           int updated = 0;
           for (int i = 0; i <= 7; i++) {
               if (stm.instr.stm.reg_list & bitcountupC) {

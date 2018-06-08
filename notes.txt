@@ -8,3 +8,25 @@ ldm instead of stm
 
 INSTRUCTIONS
 lsls r r #      ALU_LSLS
+
+
+TESTING
+if(misc.instr.push.m == 1) {
+    rf.write(SP_REG, SP - 4);
+    dmem.write(SP, LR);
+    caches.access(SP);
+    stats.numRegReads += 1;
+    stats.numMemWrites += 1;
+}
+// loop through the rest of the registers
+int bitcountdown = 128;
+for(int i = 0; i <= 7; i++) {
+    if(misc.instr.push.reg_list & bitcountdown) {
+        rf.write(SP_REG, SP - 4);
+        dmem.write(SP, rf[i]);
+        caches.access(SP);
+        stats.numRegReads += 1;
+        stats.numMemWrites += 1;
+    }
+    bitcountdown = bitcountdown / 2;
+}
