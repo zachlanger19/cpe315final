@@ -29,8 +29,8 @@ unsigned int signExtend11to32ui(short i) {
   // i = ((i & int(2047)) << 21) >> 21;
   // i = (i << 21) >> 21;
   // int res = 0;
-  // if (i >= 2048) {
-  //     i -= 2048;
+  // if (i >= 1024) {
+  //     i -= 1024;
   //     res += 2147483648;
   // }
   // res += i;
@@ -183,12 +183,12 @@ static int checkCondition(unsigned short cond) {
       }
       break;
     case GT:
-      if (flags.Z == 0 && flags.N == flags.V) {
+      if ((flags.Z == 0) && (flags.N == flags.V)) {
         return TRUE;
       }
       break;
     case LE:
-      if (flags.Z == 1 || flags.N != flags.V) {
+      if ((flags.Z == 1) || (flags.N != flags.V)) {
         return TRUE;
       }
       break;
@@ -199,7 +199,7 @@ static int checkCondition(unsigned short cond) {
   return FALSE;
 }
 
-unsigned int getBitCount(unsigned short reg_list) {
+int getBitCount(unsigned short reg_list) {
     int bc = 0;
     int bitcountdown = 1;
     for (int i = 0; i <= 7; i++) {
@@ -255,7 +255,6 @@ void execute() {
 
   // new: instruction counting
   stats.instrs++;
-
 
   // reg stat update starts now
   // CPE 315: The bulk of your work is in the following switch statement
