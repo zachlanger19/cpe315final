@@ -8,6 +8,7 @@ ldm instead of stm
 
 INSTRUCTIONS
 lsls r r #      ALU_LSLS
+lsls
 
 
 TESTING
