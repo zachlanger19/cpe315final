@@ -1,4 +1,5 @@
 #include "thumbsim.hpp"
+#include <bitset>
 // These are just the register NUMBERS
 #define PC_REG 15
 #define LR_REG 14
@@ -266,6 +267,7 @@ void execute() {
       switch(add_ops) {
         case ALU_LSLI:
           // fully new
+          // cout << bitset<16>(rf[alu.instr.lsli.rm]) << " -> " << bitset<16>(rf[alu.instr.lsli.rm] << alu.instr.lsli.imm) << endl;
           setNegativeAndZero(rf[alu.instr.lsli.rm] << alu.instr.lsli.imm);
           setCarryOverflow(rf[alu.instr.lsli.rm], alu.instr.lsli.imm, OF_SHIFT);
           rf.write(alu.instr.lsli.rd, rf[alu.instr.lsli.rm] << alu.instr.lsli.imm);
@@ -438,7 +440,7 @@ void execute() {
           break;
         case STRR:
           // all new
-          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
           dmem.write(addr, rf[ld_st.instr.ld_st_reg.rt]);
           caches.access(addr);
           stats.numRegReads += 3;
@@ -446,7 +448,7 @@ void execute() {
           break;
         case LDRR:
           // need to implement
-          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
           rf.write(ld_st.instr.ld_st_reg.rt, dmem[addr]);
           caches.access(addr);
           stats.numRegReads += 2;
@@ -478,7 +480,7 @@ void execute() {
           break;
         case STRBR:
           // all new
-          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
           temp = dmem[addr];
           temp.set_data_ubyte4(0, rf[ld_st.instr.ld_st_reg.rt]);
           dmem.write(addr, temp);
@@ -488,7 +490,7 @@ void execute() {
           break;
         case LDRBR:
           // need to implement
-          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm] * 4;
+          addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
           // temp = dmem[addr].data_ubyte4(0);
           temp = dmem[addr];
           rf.write(ld_st.instr.ld_st_reg.rt, temp.data_ubyte4(0));
@@ -533,6 +535,7 @@ void execute() {
                   caches.access(SP);
                   stats.numRegReads += 1;
                   stats.numMemWrites += 1;
+
               }
               BitCount = getBitCount(misc.instr.push.reg_list);
               addr = SP - 4 * BitCount;
