@@ -27,15 +27,6 @@ unsigned int signExtend8to32ui(char i) {
 unsigned int signExtend11to32ui(short i) {
   unsigned int m = 1u << 10;
   return (i ^ m) - m;
-  // i = ((i & int(2047)) << 21) >> 21;
-  // i = (i << 21) >> 21;
-  // int res = 0;
-  // if (i >= 1024) {
-  //     i -= 1024;
-  //     res += 2147483648;
-  // }
-  // res += i;
-  // return res;
 }
 
 // This is the global object you'll use to store condition codes
@@ -267,7 +258,6 @@ void execute() {
       switch(add_ops) {
         case ALU_LSLI:
           // fully new
-          // cout << bitset<16>(rf[alu.instr.lsli.rm]) << " -> " << bitset<16>(rf[alu.instr.lsli.rm] << alu.instr.lsli.imm) << endl;
           setNegativeAndZero(rf[alu.instr.lsli.rm] << alu.instr.lsli.imm);
           setCarryOverflow(rf[alu.instr.lsli.rm], alu.instr.lsli.imm, OF_SHIFT);
           rf.write(alu.instr.lsli.rd, rf[alu.instr.lsli.rm] << alu.instr.lsli.imm);
@@ -384,7 +374,6 @@ void execute() {
       switch(dp_ops) {
         case DP_CMP:
           // need to implement
-          // unsure if this part is correct
           setNegativeAndZero(rf[dp.instr.DP_Instr.rdn] - rf[dp.instr.DP_Instr.rm]);
           setCarryOverflow(rf[dp.instr.DP_Instr.rdn], rf[dp.instr.DP_Instr.rm], OF_SUB);
           stats.numRegReads += 2;
@@ -447,7 +436,7 @@ void execute() {
           stats.numMemWrites += 1;
           break;
         case LDRR:
-          // need to implement
+          // all new
           addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
           rf.write(ld_st.instr.ld_st_reg.rt, dmem[addr]);
           caches.access(addr);
@@ -458,7 +447,6 @@ void execute() {
         case STRBI:
           // all new
           addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
-          // may need to wipe temp with zeroes, but probably not
           temp = dmem[addr];
           temp.set_data_ubyte4(0, rf[ld_st.instr.ld_st_imm.rt]);
           dmem.write(addr, temp);
@@ -469,8 +457,6 @@ void execute() {
         case LDRBI:
           // all new
           addr = rf[ld_st.instr.ld_st_imm.rn] + ld_st.instr.ld_st_imm.imm * 4;
-          // may need to wipe temp
-          // temp = dmem[addr].data_ubyte4(0);
           temp = dmem[addr];
           rf.write(ld_st.instr.ld_st_imm.rt, temp.data_ubyte4(0));
           caches.access(addr);
@@ -491,7 +477,6 @@ void execute() {
         case LDRBR:
           // need to implement
           addr = rf[ld_st.instr.ld_st_reg.rn] + rf[ld_st.instr.ld_st_reg.rm];
-          // temp = dmem[addr].data_ubyte4(0);
           temp = dmem[addr];
           rf.write(ld_st.instr.ld_st_reg.rt, temp.data_ubyte4(0));
           caches.access(addr);
@@ -507,28 +492,6 @@ void execute() {
         case MISC_PUSH:
             {
               // all new
-              // assume stack pointer points to last stored value, not first open space
-              // might causes stats error by counting as multiple reads/writes
-              // check lr first
-              // if(misc.instr.push.m == 1) {
-              //     rf.write(SP_REG, SP - 4);
-              //     dmem.write(SP, LR);
-              //     caches.access(SP);
-              //     stats.numRegReads += 1;
-              //     stats.numMemWrites += 1;
-              // }
-              // // loop through the rest of the registers
-              // int bitcountdown = 128;
-              // for(int i = 0; i <= 7; i++) {
-              //     if(misc.instr.push.reg_list & bitcountdown) {
-              //         rf.write(SP_REG, SP - 4);
-              //         dmem.write(SP, rf[i]);
-              //         caches.access(SP);
-              //         stats.numRegReads += 1;
-              //         stats.numMemWrites += 1;
-              //     }
-              //     bitcountdown = bitcountdown / 2;
-              // }
               if(misc.instr.push.m == 1) {
                   rf.write(SP_REG, SP - 4);
                   dmem.write(SP, LR);
@@ -539,16 +502,16 @@ void execute() {
               }
               BitCount = getBitCount(misc.instr.push.reg_list);
               addr = SP - 4 * BitCount;
-              int bitcountupA = 1;
-              for (int i = 0; i <= 7; i++) {
-                  if (misc.instr.push.reg_list & bitcountupA) {
+              n = 1;
+              for (i = 0; i <= 7; i++) {
+                  if (misc.instr.push.reg_list & n) {
                       dmem.write(addr, rf[i]);
                       caches.access(addr);
                       addr += 4;
                       stats.numRegReads += 1;
                       stats.numMemWrites += 1;
                   }
-                  bitcountupA = bitcountupA << 1;
+                  n = n << 1;
               }
               rf.write(SP_REG, SP - 4 * BitCount);
 
@@ -568,43 +531,19 @@ void execute() {
                   stats.numRegWrites += 1;
                   BitCount += 1;
               }
-              int bitcountupD = 1;
+              n = 1;
               addr = SP;
-              for (int i = 0; i <= 7; i++) {
-                  if(misc.instr.pop.reg_list & bitcountupD) {
+              for (i = 0; i <= 7; i++) {
+                  if(misc.instr.pop.reg_list & n) {
                       rf.write(i, dmem[addr]);
                       caches.access(addr);
                       addr += 4;
                       stats.numRegWrites += 1;
                       stats.numMemReads += 1;
                   }
-                  bitcountupD = bitcountupD << 1;
+                  n = n << 1;
               }
               rf.write(SP_REG, SP + BitCount * 4);
-              // need to implement
-              // int bitcountup = 1;
-              // for(int i = 0; i <= 7; i++) {
-              //     if(misc.instr.pop.reg_list & bitcountup) {
-              //         rf.write(i, dmem[SP]);
-              //         caches.access(SP);
-              //         rf.write(SP_REG, SP + 4);
-              //         // stats.numRegReads += 1;
-              //         stats.numMemReads += 1;
-              //         stats.numRegWrites += 1;
-              //     }
-              //     bitcountup = bitcountup * 2;
-              // }
-              // // need to check if popping to PC counts as a branch
-              // if(misc.instr.pop.m == 1) {
-              //     rf.write(PC_REG, dmem[SP]);
-              //     caches.access(SP);
-              //     rf.write(SP_REG, SP + 4);
-              //     // could be three register reads
-              //     // stats.numRegReads += 1;
-              //     stats.numMemReads += 1;
-              //     stats.numRegWrites += 1;
-              // }
-              // for updating stack pointer
               stats.numRegWrites += 1;
               stats.numRegReads += 1;
               break;
@@ -629,18 +568,18 @@ void execute() {
       // this should work for all your conditional branches.
       // needs stats
       if (checkCondition(cond.instr.b.cond)){
-          if (signExtend8to32ui(cond.instr.b.imm) + 2 < 0) {
+          rf.write(PC_REG, PC + 2 * signExtend8to32ui(cond.instr.b.imm) + 2);
+          if (int(2 * signExtend8to32ui(cond.instr.b.imm)) > 0) {
               stats.numForwardBranchesTaken++;
           }
           else {
               stats.numBackwardBranchesTaken++;
           }
-          rf.write(PC_REG, PC + 2 * signExtend8to32ui(cond.instr.b.imm) + 2);
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
       }
       else {
-          if (signExtend8to32ui(cond.instr.b.imm) + 2 < 0) {
+          if (int(2 * signExtend8to32ui(cond.instr.b.imm)) > 0) {
               stats.numForwardBranchesNotTaken++;
           }
           else {
@@ -653,7 +592,6 @@ void execute() {
       // condition check, and an 11-bit immediate field
       decode(uncond);
       rf.write(PC_REG, PC + 2 * signExtend11to32ui(cond.instr.b.imm) + 2);
-      // May not want any stat counting here
       stats.numRegReads += 1;
       stats.numRegWrites += 1;
       break;
@@ -661,26 +599,22 @@ void execute() {
       {
           decode(ldm);
           // all new
-          int bitcountupB = 1;
+          n = 1;
           addr = rf[ldm.instr.ldm.rn];
-          // int updated = 0;
           BitCount = getBitCount(ldm.instr.ldm.reg_list);
-          for (int i = 0; i <= 7; i++) {
-              if (ldm.instr.ldm.reg_list & bitcountupB) {
+          for (i = 0; i <= 7; i++) {
+              if (ldm.instr.ldm.reg_list & n) {
                   rf.write(i, dmem[addr]);
-                  addr += 4;
-                  // updated++;
                   caches.access(addr);
+                  addr += 4;
                   stats.numRegWrites += 1;
                   stats.numMemReads += 1;
               }
               else if (i == ldm.instr.ldm.rn) {
                   rf.write(ldm.instr.ldm.rn, rf[ldm.instr.ldm.rn] + BitCount * 4);
               }
-              bitcountupB = bitcountupB * 2;
+              n = n * 2;
           }
-          // may need to update rn differently (see manual)
-          // rf.write(ldm.instr.ldm.rn, rf[ldm.instr.ldm.rn] + BitCount * 4);
 
           stats.numRegReads += 1;
           stats.numRegWrites += 1;
@@ -690,24 +624,26 @@ void execute() {
       {
           decode(stm);
           // all new
-          int bitcountupC = 1;
+          n = 1;
           addr = rf[stm.instr.stm.rn];
           int updated = 0;
           BitCount = getBitCount(stm.instr.stm.reg_list);
-          for (int i = 0; i <= 7; i++) {
-              if (stm.instr.stm.reg_list & bitcountupC) {
+          for (i = 0; i <= 7; i++) {
+              if (stm.instr.stm.reg_list & n) {
                   if (i == stm.instr.stm.rn && updated != 0) {
                       dmem.write(addr, 0);
+                      caches.access(addr);
                   }
                   else {
                       dmem.write(addr, rf[i]);
+                      caches.access(addr);
                   }
                   updated++;
                   addr += 4;
                   stats.numRegReads += 1;
                   stats.numMemWrites += 1;
               }
-              bitcountupC = bitcountupC * 2;
+              n = n * 2;
           }
           rf.write(stm.instr.stm.rn, rf[stm.instr.stm.rn] + 4 * BitCount);
           stats.numRegReads += 1;
