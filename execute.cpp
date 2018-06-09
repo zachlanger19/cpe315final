@@ -403,6 +403,7 @@ void execute() {
           rf.write((sp.instr.add.d << 3) | sp.instr.add.rd, rf[(sp.instr.add.d << 3) | sp.instr.add.rd] + rf[sp.instr.add.rm]);
           stats.numRegReads += 2;
           stats.numRegWrites += 1;
+          break;
         case SP_CMP:
           // all new
           setNegativeAndZero(rf[(sp.instr.cmp.d << 3) | sp.instr.cmp.rd] - rf[sp.instr.cmp.rm]);
